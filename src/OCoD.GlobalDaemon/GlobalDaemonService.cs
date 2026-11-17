@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 
 using Avalonia;
 using Avalonia.Controls;
@@ -6,45 +7,46 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 
 using OCoD.Desktop;
-using OCoD.LibraryClient;
 using OCoD.Localization;
 using OCoD.Protocol;
-
-using LibraryClientApi = OCoD.LibraryClient.LibraryClient;
 
 namespace OCoD.GlobalDaemon;
 
 /// <summary>
-/// Owns the tray entry, the management window, the library daemon and the character runtime.
-/// The global daemon is the only component that starts the others in the development topology.
+/// Owns the tray entry, the per-library runtime hosts and the global control channel. One global
+/// daemon can serve several distribution directories; each library gets its own library daemon,
+/// character runtimes and management window.
 /// </summary>
 internal sealed class GlobalDaemonService : IAsyncDisposable
 {
-    private const string PlaceholderRuntimeKey = "__placeholder";
-
-    private static readonly TimeSpan LibraryStartupTimeout = TimeSpan.FromSeconds(20);
-    private static readonly TimeSpan ManagementStartupTimeout = TimeSpan.FromSeconds(10);
+    private static readonly StringComparer LibraryPathComparer =
+        OperatingSystem.IsWindows()
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal;
 
     private readonly GlobalDaemonOptions _options;
     private readonly LocalizationService _localization;
     private readonly ClassicDesktopStyleApplicationLifetime _lifetime;
     private readonly Action<string> _log;
     private readonly WindowIcon _icon;
-    private readonly LibraryDaemonSupervisor _libraryDaemon;
-    private readonly Dictionary<string, CharacterRuntimeSupervisor> _runtimes =
-        new(StringComparer.Ordinal);
+    private readonly Dictionary<string, LibraryRuntimeHost> _libraries =
+        new(LibraryPathComparer);
+    private readonly LibraryRuntimeHost _primaryLibrary;
     private readonly GlobalDaemonControlServer _controlServer;
     private readonly NativeMenu _trayMenu;
+    private readonly NativeMenu _librariesMenu;
     private readonly TrayIcon _tray;
     private readonly NativeMenuItem _openManagementItem;
+    private readonly NativeMenuItem _librariesItem;
     private readonly NativeMenuItem _clickThroughItem;
     private readonly NativeMenuItem _languageItem;
     private readonly NativeMenuItem _exitItem;
-    private readonly Dictionary<string, NativeMenuItem> _languageItems = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, NativeMenuItem> _languageItems =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, NativeMenuItem> _libraryItems =
+        new(LibraryPathComparer);
     private readonly CancellationTokenSource _lifetimeSource = new();
-    private readonly SemaphoreSlim _topologyGate = new(1, 1);
 
-    private ManagementWindow? _managementWindow;
     private Task? _startupTask;
     private int _shutdownRequested;
     private int _disposed;
@@ -62,10 +64,16 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
         _log = log;
         _icon = DesktopAssets.LoadIcon();
 
-        _libraryDaemon = new LibraryDaemonSupervisor(options.LibraryPath, log);
+        _librariesMenu = new NativeMenu();
+        _primaryLibrary = RegisterLibraryHost(options.LibraryPath);
 
         _openManagementItem = new NativeMenuItem();
-        _openManagementItem.Click += (_, _) => _ = OpenManagementWindowAsync();
+        _openManagementItem.Click += (_, _) => _ = OpenManagementWindowAsync(_primaryLibrary);
+
+        _librariesItem = new NativeMenuItem
+        {
+            Menu = _librariesMenu,
+        };
 
         _clickThroughItem = new NativeMenuItem
         {
@@ -83,6 +91,7 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
 
         _trayMenu = new NativeMenu();
         _trayMenu.Items.Add(_openManagementItem);
+        _trayMenu.Items.Add(_librariesItem);
         _trayMenu.Items.Add(_clickThroughItem);
         _trayMenu.Items.Add(_languageItem);
         _trayMenu.Items.Add(new NativeMenuItemSeparator());
@@ -135,45 +144,24 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
             }
         }
 
-        if (_managementWindow is { } window)
-        {
-            _managementWindow = null;
-            window.Close();
-        }
+        var libraries = _libraries.Values.ToList();
+        _libraries.Clear();
 
-        var runtimes = _runtimes.Values.ToList();
-        _runtimes.Clear();
-
-        foreach (var runtime in runtimes)
+        foreach (var library in libraries)
         {
+            library.Changed -= OnLibraryChanged;
+
             try
             {
-                await runtime.DisposeAsync().ConfigureAwait(true);
+                await library.DisposeAsync().ConfigureAwait(true);
             }
             catch (Exception exception)
             {
-                _log($"character runtime cleanup failed: {exception.Message}");
+                _log($"library host cleanup failed: {exception.Message}");
             }
         }
 
-        try
-        {
-            await _libraryDaemon.ShutdownAsync(CancellationToken.None).ConfigureAwait(true);
-        }
-        catch (Exception exception)
-        {
-            _log($"library daemon cleanup failed: {exception.Message}");
-        }
-
-        try
-        {
-            await _libraryDaemon.DisposeAsync().ConfigureAwait(true);
-        }
-        catch (Exception exception)
-        {
-            _log($"library supervisor cleanup failed: {exception.Message}");
-        }
-
+        _libraryItems.Clear();
         await _controlServer.DisposeAsync().ConfigureAwait(true);
 
         _tray.IsVisible = false;
@@ -184,36 +172,20 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
 
     public Task<GlobalStatus> GetStatusAsync()
     {
-        var libraryInfo = _libraryDaemon.GetProcessInfo();
-        var runtimeStatuses = _runtimes.Values
-            .Select(runtime => new CharacterRuntimeStatus(
-                runtime.CharacterId,
-                runtime.CharacterName,
-                runtime.GetProcessInfo(),
-                runtime.State))
-            .ToList();
-        var primary = runtimeStatuses.FirstOrDefault();
+        var primary = _primaryLibrary.GetStatus();
 
         if (_startupError is not null)
         {
-            libraryInfo = libraryInfo with { Detail = _startupError };
+            primary = primary with
+            {
+                LibraryDaemon = primary.LibraryDaemon with { Detail = _startupError },
+            };
         }
 
-        return Task.FromResult(new GlobalStatus(
-            Environment.ProcessId,
-            ComponentVersion.Of(typeof(GlobalDaemonService)),
-            _options.RuntimeRoot,
-            _options.LibraryPath,
-            _managementWindow is { IsVisible: true },
-            libraryInfo,
-            primary?.Process ?? new ProcessInfo(
-                ComponentNames.CharacterRuntime,
-                Running: false,
-                Pid: null,
-                Version: null,
-                Detail: "not running"),
-            primary?.State,
-            runtimeStatuses));
+        return Task.FromResult(primary with
+        {
+            Libraries = _libraries.Values.Select(library => library.GetLibraryStatus()).ToList(),
+        });
     }
 
     public async Task RequestShutdownAsync()
@@ -228,29 +200,80 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
         _lifetime.Shutdown();
     }
 
+    private LibraryRuntimeHost RegisterLibraryHost(string libraryPath)
+    {
+        if (Volatile.Read(ref _disposed) != 0)
+        {
+            throw new InvalidOperationException("The global daemon is shutting down.");
+        }
+
+        var normalized = LibraryRuntimeHost.NormalizeLibraryPath(libraryPath);
+        if (_libraries.TryGetValue(normalized, out var existing))
+        {
+            return existing;
+        }
+
+        var host = new LibraryRuntimeHost(
+            normalized,
+            BuildLibraryDisplayName(normalized),
+            _options.RuntimeRoot,
+            _options.ComponentsDirectory,
+            _localization,
+            _icon,
+            _lifetimeSource.Token,
+            _log);
+        host.Changed += OnLibraryChanged;
+        _libraries.Add(normalized, host);
+
+        var item = new NativeMenuItem
+        {
+            Header = host.DisplayName,
+        };
+        item.Click += (_, _) => _ = OpenManagementWindowAsync(host);
+        _librariesMenu.Items.Add(item);
+        _libraryItems[normalized] = item;
+        _log($"registered library '{normalized}'");
+        return host;
+    }
+
+    private string BuildLibraryDisplayName(string libraryPath)
+    {
+        var baseName = LibraryRuntimeHost.GetDefaultDisplayName(libraryPath);
+        var candidate = baseName;
+        var suffix = 2;
+
+        while (_libraries.Values.Any(library => string.Equals(
+            library.DisplayName,
+            candidate,
+            StringComparison.OrdinalIgnoreCase)))
+        {
+            candidate = $"{baseName} ({suffix++})";
+        }
+
+        return candidate;
+    }
+
+    private LibraryRuntimeHost ResolveLibraryHost(string? libraryPath) =>
+        string.IsNullOrWhiteSpace(libraryPath)
+            ? _primaryLibrary
+            : RegisterLibraryHost(libraryPath);
+
+    private LibraryRuntimeHost ResolveRequestLibrary(JsonElement? parameters)
+    {
+        if (parameters is not { } element)
+        {
+            return _primaryLibrary;
+        }
+
+        var request = ProtocolJson.FromElement<LibraryPathRequest>(element);
+        return ResolveLibraryHost(request.LibraryPath);
+    }
+
     private async Task StartTopologyAsync()
     {
         try
         {
-            _log($"topology starting for '{_options.LibraryPath}'");
-            await WithTopologyGateAsync(async () =>
-            {
-                await _libraryDaemon.EnsureStartedAsync(
-                    LibraryStartupTimeout,
-                    _lifetimeSource.Token).ConfigureAwait(true);
-
-                var characters = await QueryCharactersAsync().ConfigureAwait(true);
-
-                if (characters.Count == 0)
-                {
-                    await StartPlaceholderWithLeaseAsync().ConfigureAwait(true);
-                }
-                else
-                {
-                    _log($"library has {characters.Count} character(s); waiting for an explicit start");
-                }
-            }).ConfigureAwait(true);
-
+            await _primaryLibrary.StartAsync(startPlaceholderWhenEmpty: true).ConfigureAwait(true);
             _startupError = null;
             _log("topology ready");
             UpdateTray();
@@ -276,22 +299,42 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
             switch (request.Method)
             {
                 case "status":
+                    if (request.Params is { } statusParameters)
+                    {
+                        var statusRequest = ProtocolJson.FromElement<LibraryPathRequest>(
+                            statusParameters);
+                        if (!string.IsNullOrWhiteSpace(statusRequest.LibraryPath))
+                        {
+                            return Success(ProtocolJson.ToElement(
+                                ResolveLibraryHost(statusRequest.LibraryPath).GetStatus()));
+                        }
+                    }
+
                     return Success(ProtocolJson.ToElement(await GetStatusAsync().ConfigureAwait(true)));
 
                 case "open-management":
-                    await OpenManagementWindowAsync().ConfigureAwait(true);
+                    await OpenManagementWindowAsync(ResolveRequestLibrary(request.Params))
+                        .ConfigureAwait(true);
+                    return Success(ProtocolJson.ToElement(new CommandResult(true)));
+
+                case "ensure-library":
+                    await ResolveRequestLibrary(request.Params).EnsureLibraryDaemonAsync()
+                        .ConfigureAwait(true);
                     return Success(ProtocolJson.ToElement(new CommandResult(true)));
 
                 case "ensure-runtime":
-                    await EnsureRuntimeAsync().ConfigureAwait(true);
+                    await ResolveRequestLibrary(request.Params).EnsureRuntimeAsync()
+                        .ConfigureAwait(true);
                     return Success(ProtocolJson.ToElement(new CommandResult(true)));
 
                 case "stop-runtime":
-                    await StopAllRuntimesAsync().ConfigureAwait(true);
+                    await ResolveRequestLibrary(request.Params).StopAllRuntimesAsync()
+                        .ConfigureAwait(true);
                     return Success(ProtocolJson.ToElement(new CommandResult(true)));
 
                 case "restart-runtime":
-                    await RestartAllRuntimesAsync().ConfigureAwait(true);
+                    await ResolveRequestLibrary(request.Params).RestartAllRuntimesAsync()
+                        .ConfigureAwait(true);
                     return Success(ProtocolJson.ToElement(new CommandResult(true)));
 
                 case "start-character":
@@ -301,7 +344,9 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
                     }
 
                     var startRequest = ProtocolJson.FromElement<CharacterIdRequest>(startParameters);
-                    await StartCharacterAsync(startRequest.CharacterId).ConfigureAwait(true);
+                    await ResolveLibraryHost(startRequest.LibraryPath)
+                        .StartCharacterAsync(startRequest.CharacterId)
+                        .ConfigureAwait(true);
                     return Success(ProtocolJson.ToElement(new CommandResult(true)));
 
                 case "stop-character":
@@ -311,7 +356,9 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
                     }
 
                     var stopRequest = ProtocolJson.FromElement<CharacterIdRequest>(stopParameters);
-                    await StopCharacterAsync(stopRequest.CharacterId).ConfigureAwait(true);
+                    await ResolveLibraryHost(stopRequest.LibraryPath)
+                        .StopCharacterAsync(stopRequest.CharacterId)
+                        .ConfigureAwait(true);
                     return Success(ProtocolJson.ToElement(new CommandResult(true)));
 
                 case "activate-character":
@@ -320,16 +367,27 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
                         return Failure("activate-character requires parameters.");
                     }
 
-                    var activateRequest = ProtocolJson.FromElement<CharacterIdRequest>(activateParameters);
-                    await ActivateCharacterAsync(activateRequest.CharacterId).ConfigureAwait(true);
+                    var activateRequest = ProtocolJson.FromElement<CharacterIdRequest>(
+                        activateParameters);
+                    await ResolveLibraryHost(activateRequest.LibraryPath)
+                        .ActivateCharacterAsync(activateRequest.CharacterId)
+                        .ConfigureAwait(true);
                     return Success(ProtocolJson.ToElement(new CommandResult(true)));
 
                 case "list-characters":
+                    var characters = await ResolveRequestLibrary(request.Params)
+                        .ListCharactersAsync()
+                        .ConfigureAwait(true);
                     return Success(ProtocolJson.ToElement(
-                        new List<CharacterSummary>(await QueryCharactersAsync().ConfigureAwait(true))));
+                        new List<CharacterSummary>(characters)));
 
                 case "restart-library-daemon":
-                    await RestartLibraryDaemonAsync().ConfigureAwait(true);
+                    await ResolveRequestLibrary(request.Params).RestartLibraryDaemonAsync()
+                        .ConfigureAwait(true);
+                    return Success(ProtocolJson.ToElement(new CommandResult(true)));
+
+                case "close-management":
+                    ResolveRequestLibrary(request.Params).CloseManagementWindow();
                     return Success(ProtocolJson.ToElement(new CommandResult(true)));
 
                 case "set-click-through":
@@ -339,7 +397,11 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
                     }
 
                     var clickThrough = ProtocolJson.FromElement<SetClickThroughRequest>(parameters);
-                    await SetClickThroughAsync(clickThrough.Enabled).ConfigureAwait(true);
+                    await SetClickThroughAsync(
+                        clickThrough.Enabled,
+                        string.IsNullOrWhiteSpace(clickThrough.LibraryPath)
+                            ? null
+                            : ResolveLibraryHost(clickThrough.LibraryPath)).ConfigureAwait(true);
                     return Success(ProtocolJson.ToElement(new CommandResult(true)));
 
                 case "shutdown":
@@ -364,262 +426,36 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
         }
     }
 
-    private async Task EnsureRuntimeAsync()
+    private async Task OpenManagementWindowAsync(LibraryRuntimeHost library)
     {
-        await WithTopologyGateAsync(EnsureRuntimeCoreAsync).ConfigureAwait(true);
-
-        _startupError = null;
-        UpdateTray();
-    }
-
-    private async Task EnsureRuntimeCoreAsync()
-    {
-        await _libraryDaemon.EnsureStartedAsync(
-            LibraryStartupTimeout,
-            _lifetimeSource.Token).ConfigureAwait(true);
-
-        var characters = await QueryCharactersAsync().ConfigureAwait(true);
-
-        if (characters.Count == 0)
-        {
-            await StartPlaceholderWithLeaseAsync().ConfigureAwait(true);
-            return;
-        }
-
-        foreach (var character in characters)
-        {
-            await StartCharacterCoreAsync(character.Id, character.Name).ConfigureAwait(true);
-        }
-    }
-
-    private async Task StartCharacterCoreAsync(string characterId, string? characterName)
-    {
-        if (_runtimes.TryGetValue(characterId, out var existing))
-        {
-            if (existing.GetProcessInfo().Running)
-            {
-                await existing.ShowAsync(_lifetimeSource.Token).ConfigureAwait(true);
-                return;
-            }
-
-            await RemoveRuntimeAsync(characterId).ConfigureAwait(true);
-        }
-
-        await StopPlaceholderAsync().ConfigureAwait(true);
-
-        var record = await GetCharacterRecordAsync(characterId).ConfigureAwait(true)
-            ?? throw new IpcException($"Character '{characterId}' was not found.");
-        var runtime = CreateRuntime(characterId, record.Name);
-
         try
         {
-            await StartSupervisorWithLeaseAsync(runtime).ConfigureAwait(true);
-        }
-        catch
-        {
-            await RemoveRuntimeAsync(characterId).ConfigureAwait(true);
-            throw;
-        }
-    }
-
-    private async Task StartPlaceholderWithLeaseAsync()
-    {
-        if (_runtimes.TryGetValue(PlaceholderRuntimeKey, out var existing)
-            && existing.GetProcessInfo().Running)
-        {
-            return;
-        }
-
-        await RemoveRuntimeAsync(PlaceholderRuntimeKey).ConfigureAwait(true);
-        var runtime = CreateRuntime(characterId: null, characterName: null);
-
-        try
-        {
-            await StartSupervisorWithLeaseAsync(runtime).ConfigureAwait(true);
-        }
-        catch
-        {
-            await RemoveRuntimeAsync(PlaceholderRuntimeKey).ConfigureAwait(true);
-            throw;
-        }
-    }
-
-    private async Task StartSupervisorWithLeaseAsync(CharacterRuntimeSupervisor runtime)
-    {
-        await _libraryDaemon.EnsureStartedAsync(
-            LibraryStartupTimeout,
-            _lifetimeSource.Token).ConfigureAwait(true);
-
-        // Keep the library daemon alive while Avalonia and the control channel start up in the
-        // character runtime; its own library client connects shortly after the control handshake.
-        await using var lease = await LibraryClientApi.ConnectAsync(
-            _options.LibraryPath,
-            ComponentNames.GlobalDaemon,
-            timeout: TimeSpan.FromSeconds(5),
-            _lifetimeSource.Token).ConfigureAwait(true);
-
-        await runtime.StartAsync(_lifetimeSource.Token).ConfigureAwait(true);
-
-        var deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(10);
-        while (DateTimeOffset.UtcNow < deadline)
-        {
-            if (runtime.State?.LibraryConnected == true)
-            {
-                return;
-            }
-
-            await Task.Delay(100, _lifetimeSource.Token).ConfigureAwait(true);
-        }
-
-        _log("warning: a character runtime did not report a library connection during startup");
-    }
-
-    private async Task StopPlaceholderAsync()
-    {
-        if (_runtimes.ContainsKey(PlaceholderRuntimeKey))
-        {
-            await RemoveRuntimeAsync(PlaceholderRuntimeKey).ConfigureAwait(true);
-        }
-    }
-
-    private async Task StartCharacterAsync(string characterId)
-    {
-        await WithTopologyGateAsync(async () =>
-        {
-            await _libraryDaemon.EnsureStartedAsync(
-                LibraryStartupTimeout,
-                _lifetimeSource.Token).ConfigureAwait(true);
-            await StartCharacterCoreAsync(characterId, characterName: null).ConfigureAwait(true);
-        }).ConfigureAwait(true);
-
-        UpdateTray();
-    }
-
-    private async Task StopCharacterAsync(string characterId)
-    {
-        await WithTopologyGateAsync(
-            () => RemoveRuntimeAsync(characterId)).ConfigureAwait(true);
-        UpdateTray();
-    }
-
-    private async Task ActivateCharacterAsync(string characterId)
-    {
-        if (_runtimes.TryGetValue(characterId, out var runtime))
-        {
-            await runtime.ShowAsync(_lifetimeSource.Token).ConfigureAwait(true);
-        }
-    }
-
-    private async Task StopAllRuntimesAsync()
-    {
-        await WithTopologyGateAsync(async () =>
-        {
-            foreach (var key in _runtimes.Keys.ToList())
-            {
-                await RemoveRuntimeAsync(key).ConfigureAwait(true);
-            }
-        }).ConfigureAwait(true);
-
-        UpdateTray();
-    }
-
-    private async Task RestartAllRuntimesAsync()
-    {
-        await WithTopologyGateAsync(async () =>
-        {
-            foreach (var key in _runtimes.Keys.ToList())
-            {
-                await RemoveRuntimeAsync(key).ConfigureAwait(true);
-            }
-
-            await EnsureRuntimeCoreAsync().ConfigureAwait(true);
-        }).ConfigureAwait(true);
-
-        UpdateTray();
-    }
-
-    private CharacterRuntimeSupervisor CreateRuntime(string? characterId, string? characterName)
-    {
-        var runtime = new CharacterRuntimeSupervisor(
-            _options.LibraryPath,
-            characterId,
-            characterName,
-            _options.ComponentsDirectory,
-            _localization,
-            _log);
-        runtime.StateChanged += OnRuntimeStateChanged;
-
-        var key = characterId ?? PlaceholderRuntimeKey;
-        _runtimes[key] = runtime;
-        return runtime;
-    }
-
-    private async Task RemoveRuntimeAsync(string key)
-    {
-        if (!_runtimes.Remove(key, out var runtime))
-        {
-            return;
-        }
-
-        runtime.StateChanged -= OnRuntimeStateChanged;
-
-        try
-        {
-            await runtime.DisposeAsync().ConfigureAwait(true);
+            await library.OpenManagementWindowAsync().ConfigureAwait(true);
         }
         catch (Exception exception)
         {
-            _log($"character runtime cleanup failed: {exception.Message}");
+            _log($"could not open the management window: {exception}");
         }
-    }
 
-    private async Task RestartLibraryDaemonAsync()
-    {
-        _log("restarting library daemon");
-        await WithTopologyGateAsync(async () =>
-        {
-            await _libraryDaemon.ShutdownAsync(_lifetimeSource.Token).ConfigureAwait(true);
-            await _libraryDaemon.EnsureStartedAsync(
-                LibraryStartupTimeout,
-                _lifetimeSource.Token).ConfigureAwait(true);
-        }).ConfigureAwait(true);
-
-        _log("library daemon restarted");
         UpdateTray();
     }
 
-    private async Task WithTopologyGateAsync(Func<Task> action)
+    private async Task SetClickThroughAsync(bool enabled, LibraryRuntimeHost? library = null)
     {
-        await _topologyGate.WaitAsync(_lifetimeSource.Token).ConfigureAwait(true);
-        try
-        {
-            await action().ConfigureAwait(true);
-        }
-        finally
-        {
-            _topologyGate.Release();
-        }
-    }
+        var libraries = library is null
+            ? _libraries.Values.ToList()
+            : [library];
 
-    private async Task SetClickThroughAsync(bool enabled)
-    {
-        foreach (var runtime in _runtimes.Values.ToList())
+        foreach (var target in libraries)
         {
-            try
-            {
-                await runtime.SetClickThroughAsync(enabled, _lifetimeSource.Token)
-                    .ConfigureAwait(true);
-            }
-            catch (Exception exception)
-            {
-                _log($"could not change click-through: {exception.Message}");
-            }
+            await target.SetClickThroughAsync(enabled).ConfigureAwait(true);
         }
     }
 
     private async Task ToggleClickThroughFromTrayAsync()
     {
-        var state = _runtimes.Values
+        var state = _libraries.Values
+            .SelectMany(library => library.CharacterRuntimes)
             .Select(runtime => runtime.State)
             .FirstOrDefault(current => current is not null);
 
@@ -636,115 +472,6 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
         {
             _log($"could not change click-through from the tray: {exception.Message}");
         }
-    }
-
-    private async Task<IReadOnlyList<CharacterSummary>> QueryCharactersAsync()
-    {
-        try
-        {
-            await using var client = await LibraryClientApi.ConnectAsync(
-                _options.LibraryPath,
-                ComponentNames.GlobalDaemon,
-                timeout: TimeSpan.FromSeconds(5),
-                _lifetimeSource.Token).ConfigureAwait(true);
-
-            return await client.ListCharactersAsync(
-                timeout: TimeSpan.FromSeconds(5),
-                _lifetimeSource.Token).ConfigureAwait(true);
-        }
-        catch (Exception exception) when (
-            exception is IOException
-                or System.Net.Sockets.SocketException
-                or IpcException
-                or TimeoutException
-                or OperationCanceledException)
-        {
-            _log($"could not list characters: {exception.Message}");
-            return [];
-        }
-    }
-
-    private async Task<CharacterRecord?> GetCharacterRecordAsync(string characterId)
-    {
-        try
-        {
-            await using var client = await LibraryClientApi.ConnectAsync(
-                _options.LibraryPath,
-                ComponentNames.GlobalDaemon,
-                timeout: TimeSpan.FromSeconds(5),
-                _lifetimeSource.Token).ConfigureAwait(true);
-
-            return await client.GetCharacterAsync(
-                characterId,
-                timeout: TimeSpan.FromSeconds(5),
-                _lifetimeSource.Token).ConfigureAwait(true);
-        }
-        catch (IpcException)
-        {
-            return null;
-        }
-        catch (Exception exception) when (
-            exception is IOException
-                or System.Net.Sockets.SocketException
-                or TimeoutException
-                or OperationCanceledException)
-        {
-            _log($"could not read character '{characterId}': {exception.Message}");
-            return null;
-        }
-    }
-
-    private async Task OpenManagementWindowAsync()
-    {
-        if (_managementWindow is { } existing)
-        {
-            if (!existing.IsVisible)
-            {
-                existing.Show();
-            }
-
-            existing.Activate();
-            return;
-        }
-
-        try
-        {
-            await WithTopologyGateAsync(async () =>
-            {
-                await _libraryDaemon.EnsureStartedAsync(
-                    ManagementStartupTimeout,
-                    _lifetimeSource.Token).ConfigureAwait(true);
-            }).ConfigureAwait(true);
-        }
-        catch (Exception exception)
-        {
-            _log($"could not ensure the library daemon for the management window: {exception.Message}");
-        }
-
-        var window = new ManagementWindow(
-            _localization,
-            _icon,
-            _options.LibraryPath,
-            GetStatusAsync,
-            StartCharacterAsync,
-            StopCharacterAsync,
-            RestartLibraryDaemonAsync,
-            () => SetClickThroughAsync(false),
-            message => _log($"[management] {message}"));
-
-        window.Closed += (_, _) =>
-        {
-            if (ReferenceEquals(_managementWindow, window))
-            {
-                _managementWindow = null;
-                UpdateTray();
-            }
-        };
-
-        _managementWindow = window;
-        window.Show();
-        window.Activate();
-        UpdateTray();
     }
 
     private NativeMenu BuildLanguageMenu()
@@ -766,7 +493,7 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
         return menu;
     }
 
-    private void OnRuntimeStateChanged()
+    private void OnLibraryChanged()
     {
         Dispatcher.UIThread.Post(UpdateTray);
     }
@@ -784,17 +511,9 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
 
     private async Task SendLanguageToRuntimeAsync(string languageTag)
     {
-        foreach (var runtime in _runtimes.Values.ToList())
+        foreach (var library in _libraries.Values.ToList())
         {
-            try
-            {
-                await runtime.SetLanguageAsync(languageTag, _lifetimeSource.Token)
-                    .ConfigureAwait(true);
-            }
-            catch (Exception exception)
-            {
-                _log($"could not change the character runtime language: {exception.Message}");
-            }
+            await library.SetLanguageAsync(languageTag).ConfigureAwait(true);
         }
     }
 
@@ -805,12 +524,17 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
             return;
         }
 
+        var runtimes = _libraries.Values
+            .SelectMany(library => library.CharacterRuntimes)
+            .ToList();
+
         _openManagementItem.Header = _localization.Get(LocKeys.TrayOpenManagement);
+        _openManagementItem.IsEnabled = _libraries.Count > 0;
+        _librariesItem.Header = _localization.Get(LocKeys.TrayLibraries);
+        _librariesItem.IsVisible = _libraries.Count > 1;
         _clickThroughItem.Header = _localization.Get(LocKeys.TrayClickThrough);
-        _clickThroughItem.IsChecked = _runtimes.Values.Any(
-            runtime => runtime.State?.ClickThrough == true);
-        _clickThroughItem.IsEnabled = _runtimes.Values.Any(
-            runtime => runtime.GetProcessInfo().Running);
+        _clickThroughItem.IsChecked = runtimes.Any(runtime => runtime.State?.ClickThrough == true);
+        _clickThroughItem.IsEnabled = runtimes.Any(runtime => runtime.Process.Running);
         _languageItem.Header = _localization.Get(LocKeys.MenuLanguage);
         _exitItem.Header = _localization.Get(LocKeys.TrayExit);
         _tray.ToolTipText = _localization.Get(LocKeys.AppName);
@@ -835,7 +559,7 @@ internal sealed class GlobalDaemonService : IAsyncDisposable
         _ => throw new ArgumentOutOfRangeException(nameof(culture), culture, "Unsupported UI culture."),
     };
 
-    private static IpcMessage Success(System.Text.Json.JsonElement result) => new()
+    private static IpcMessage Success(JsonElement result) => new()
     {
         Ok = true,
         Result = result,

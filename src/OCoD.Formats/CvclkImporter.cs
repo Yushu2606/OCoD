@@ -96,6 +96,13 @@ public static class CvclkImporter
                 "The payload must contain a non-empty characters array.");
         }
 
+        if (characters.Any(character => character is JsonObject entry && HasProtectionMarkers(entry)))
+        {
+            throw new CvclkFormatException(
+                CvclkError.Protected,
+                "Protected cvclk packages are not supported by this importer yet.");
+        }
+
         var result = new CvclkImportResult();
 
         foreach (var node in characters)
@@ -425,6 +432,17 @@ public static class CvclkImporter
 
         image = new ImportedImage(slot, mime, extension, bytes.ToArray());
         return true;
+    }
+
+    /// <summary>
+    /// Normal import rejects every protected-package marker. The container-level owner and locked
+    /// markers are handled by <see cref="CvclkContainer"/>; this covers payload <c>editLock</c>.
+    /// </summary>
+    private static bool HasProtectionMarkers(JsonObject character)
+    {
+        return character["editLock"] is JsonValue value
+            && value.TryGetValue<bool>(out var editLock)
+            && editLock;
     }
 
     private static string? GetString(JsonNode? node) =>

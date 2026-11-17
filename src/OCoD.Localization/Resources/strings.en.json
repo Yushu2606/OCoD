@@ -12,6 +12,7 @@
   "Tray.ClickThrough": "Click-through",
   "Tray.Exit": "Exit OCoD",
   "Tray.OpenManagement": "Open character library",
+  "Tray.Libraries": "Libraries",
   "Management.Title": "OCoD Character Library",
   "Management.LibraryPath": "Library path: {0}",
   "Management.GlobalDaemon": "Global daemon",

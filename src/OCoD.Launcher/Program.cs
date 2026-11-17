@@ -96,11 +96,18 @@ internal static class Program
                 $"Unsupported launcher command {context.Options.Command}."),
         };
 
-        var parameters = context.Options.Command is LauncherCommand.StartCharacter
-            or LauncherCommand.StopCharacter
-            or LauncherCommand.ActivateCharacter
-            ? ProtocolJson.ToElement(new CharacterIdRequest(context.Options.CharacterId!))
-            : (System.Text.Json.JsonElement?)null;
+        System.Text.Json.JsonElement? parameters = context.Options.Command switch
+        {
+            LauncherCommand.StartCharacter or LauncherCommand.StopCharacter
+                or LauncherCommand.ActivateCharacter => ProtocolJson.ToElement(
+                    new CharacterIdRequest(context.Options.CharacterId!, context.LibraryPath)),
+            LauncherCommand.Start or LauncherCommand.EnsureRuntime
+                or LauncherCommand.OpenManagement or LauncherCommand.StopRuntime
+                or LauncherCommand.RestartRuntime
+                or LauncherCommand.RestartLibraryDaemon => ProtocolJson.ToElement(
+                    new LibraryPathRequest(context.LibraryPath)),
+            _ => null,
+        };
 
         var response = await connection.InvokeAsync(
             method,
@@ -266,6 +273,7 @@ internal static class Program
             ?? throw new InvalidOperationException("An import path is required."));
 
         await using var connection = await EnsureDaemonAsync(context).ConfigureAwait(false);
+        await EnsureLibraryAsync(connection, context).ConfigureAwait(false);
         await using var library = await ConnectLibraryAsync(
             context,
             TimeSpan.FromSeconds(20)).ConfigureAwait(false);
@@ -284,7 +292,7 @@ internal static class Program
         {
             var response = await connection.InvokeAsync(
                 "start-character",
-                ProtocolJson.ToElement(new CharacterIdRequest(imported.Id)),
+                ProtocolJson.ToElement(new CharacterIdRequest(imported.Id, context.LibraryPath)),
                 timeout: TimeSpan.FromSeconds(60)).ConfigureAwait(false);
 
             if (response.Ok == false)
@@ -304,6 +312,7 @@ internal static class Program
     private static async Task<int> ListCharactersAsync(LauncherContext context)
     {
         await using var connection = await EnsureDaemonAsync(context).ConfigureAwait(false);
+        await EnsureLibraryAsync(connection, context).ConfigureAwait(false);
         await using var library = await ConnectLibraryAsync(
             context,
             TimeSpan.FromSeconds(20)).ConfigureAwait(false);
@@ -320,6 +329,22 @@ internal static class Program
         }
 
         return 0;
+    }
+
+    private static async Task EnsureLibraryAsync(
+        IpcClientConnection connection,
+        LauncherContext context)
+    {
+        var response = await connection.InvokeAsync(
+            "ensure-library",
+            ProtocolJson.ToElement(new LibraryPathRequest(context.LibraryPath)),
+            timeout: TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+
+        if (response.Ok == false)
+        {
+            throw new IpcException(
+                response.Error ?? $"Could not start the library daemon for '{context.LibraryPath}'.");
+        }
     }
 
     private static async Task<LibraryClientApi> ConnectLibraryAsync(
@@ -361,6 +386,7 @@ internal static class Program
             ?? throw new InvalidOperationException("A character id is required.");
 
         await using var connection = await EnsureDaemonAsync(context).ConfigureAwait(false);
+        await EnsureLibraryAsync(connection, context).ConfigureAwait(false);
         await using var library = await ConnectLibraryAsync(
             context,
             TimeSpan.FromSeconds(20)).ConfigureAwait(false);
@@ -425,6 +451,26 @@ internal static class Program
         else
         {
             Console.WriteLine($"  character       : {Describe(status.CharacterRuntime)}");
+        }
+
+        if (status.Libraries is { Count: > 1 } libraries)
+        {
+            Console.WriteLine($"  libraries       : {libraries.Count}");
+
+            foreach (var library in libraries)
+            {
+                Console.WriteLine(
+                    $"    {library.DisplayName}  {library.LibraryPath}  " +
+                    $"[management {(library.ManagementWindowOpen ? "open" : "closed")}]");
+                Console.WriteLine($"      library daemon : {Describe(library.LibraryDaemon)}");
+                Console.WriteLine($"      characters     : {library.CharacterRuntimes.Count}");
+
+                foreach (var runtime in library.CharacterRuntimes)
+                {
+                    var label = runtime.CharacterName ?? runtime.CharacterId ?? "placeholder";
+                    Console.WriteLine($"        {label} — {Describe(runtime.Process)}");
+                }
+            }
         }
     }
 

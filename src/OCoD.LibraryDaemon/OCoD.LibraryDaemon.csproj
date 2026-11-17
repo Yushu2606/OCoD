@@ -14,4 +14,8 @@
     <ProjectReference Include="../OCoD.Protocol/OCoD.Protocol.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="OCoD.LibraryDaemon.Tests" />
+  </ItemGroup>
+
 </Project>

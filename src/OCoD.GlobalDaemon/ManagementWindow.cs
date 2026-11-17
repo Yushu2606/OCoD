@@ -17,6 +17,7 @@ internal sealed class ManagementWindow : Window
 {
     private readonly LocalizationService _localization;
     private readonly string _libraryPath;
+    private readonly string _libraryDisplayName;
     private readonly Func<Task<GlobalStatus>> _getStatus;
     private readonly Func<string, Task> _startCharacter;
     private readonly Func<string, Task> _stopCharacter;
@@ -38,6 +39,7 @@ internal sealed class ManagementWindow : Window
         LocalizationService localization,
         WindowIcon icon,
         string libraryPath,
+        string libraryDisplayName,
         Func<Task<GlobalStatus>> getStatus,
         Func<string, Task> startCharacter,
         Func<string, Task> stopCharacter,
@@ -47,6 +49,7 @@ internal sealed class ManagementWindow : Window
     {
         _localization = localization;
         _libraryPath = libraryPath;
+        _libraryDisplayName = libraryDisplayName;
         _getStatus = getStatus;
         _startCharacter = startCharacter;
         _stopCharacter = stopCharacter;
@@ -54,7 +57,7 @@ internal sealed class ManagementWindow : Window
         _restoreInteraction = restoreInteraction;
         _log = log;
 
-        Title = localization.Get(LocKeys.ManagementTitle);
+        Title = BuildTitle();
         Icon = icon;
         Width = 720;
         Height = 720;
@@ -126,13 +129,16 @@ internal sealed class ManagementWindow : Window
 
     private void OnCultureChanged(CultureInfo culture)
     {
-        Title = _localization.Get(LocKeys.ManagementTitle);
+        Title = BuildTitle();
 
         if (_lastGlobalStatus is not null)
         {
             _view.Apply(_lastGlobalStatus, _lastLibraryStatus, _lastCharacters);
         }
     }
+
+    private string BuildTitle() =>
+        $"{_localization.Get(LocKeys.ManagementTitle)} — {_libraryDisplayName}";
 
     private async Task RefreshAsync()
     {

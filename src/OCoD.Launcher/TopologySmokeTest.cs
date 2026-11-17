@@ -170,6 +170,83 @@ internal static class TopologySmokeTest
                     withManagement is not null,
                     "management window and character runtime share the library daemon");
 
+                var secondLibraryPath = Path.Combine(context.SmokeRoot!, "library-b");
+                await InvokeAsync(
+                    connection,
+                    "open-management",
+                    ProtocolJson.ToElement(new LibraryPathRequest(secondLibraryPath)))
+                    .ConfigureAwait(false);
+
+                var secondLibrary = await WaitForStatusAsync(
+                    connection,
+                    current => FindLibrary(current, secondLibraryPath) is
+                    { ManagementWindowOpen: true, LibraryDaemon.Running: true },
+                    TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                Check(secondLibrary is not null, "a second library can be opened alongside the first");
+                Check(
+                    secondLibrary is not null
+                        && FindLibrary(secondLibrary, context.LibraryPath) is
+                        { ManagementWindowOpen: true } firstLibrary
+                        && firstLibrary.CharacterRuntimes.Any(runtime => runtime.Process.Running),
+                    "opening the second library leaves the first library running");
+
+                var firstDaemonPid = FindLibrary(secondLibrary!, context.LibraryPath)?.LibraryDaemon.Pid;
+                var secondDaemonPid = FindLibrary(secondLibrary!, secondLibraryPath)?.LibraryDaemon.Pid;
+                Check(
+                    firstDaemonPid is not null
+                        && secondDaemonPid is not null
+                        && firstDaemonPid != secondDaemonPid,
+                    "each library has its own library daemon");
+
+                await InvokeAsync(
+                    connection,
+                    "ensure-runtime",
+                    ProtocolJson.ToElement(new LibraryPathRequest(secondLibraryPath)))
+                    .ConfigureAwait(false);
+                var secondRuntime = await WaitForStatusAsync(
+                    connection,
+                    current => FindLibrary(current, secondLibraryPath)?.CharacterRuntimes
+                        .Any(runtime => runtime.Process.Running) == true
+                        && FindLibrary(current, context.LibraryPath)?.CharacterRuntimes
+                            .Any(runtime => runtime.Process.Running) == true,
+                    TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                Check(
+                    secondRuntime is not null,
+                    "character runtimes can run in two libraries at the same time");
+
+                await InvokeAsync(
+                    connection,
+                    "stop-runtime",
+                    ProtocolJson.ToElement(new LibraryPathRequest(secondLibraryPath)))
+                    .ConfigureAwait(false);
+                var secondStopped = await WaitForStatusAsync(
+                    connection,
+                    current => FindLibrary(current, secondLibraryPath)?.CharacterRuntimes
+                        .Any(runtime => runtime.Process.Running) == false
+                        && FindLibrary(current, context.LibraryPath)?.CharacterRuntimes
+                            .Any(runtime => runtime.Process.Running) == true,
+                    TimeSpan.FromSeconds(20)).ConfigureAwait(false);
+                Check(
+                    secondStopped is not null,
+                    "stopping the second library runtime does not affect the first library");
+
+                await InvokeAsync(
+                    connection,
+                    "close-management",
+                    ProtocolJson.ToElement(new LibraryPathRequest(secondLibraryPath)))
+                    .ConfigureAwait(false);
+                var secondClosed = await WaitForStatusAsync(
+                    connection,
+                    current => FindLibrary(current, secondLibraryPath) is
+                    { ManagementWindowOpen: false }
+                        && FindLibrary(current, context.LibraryPath) is
+                        { ManagementWindowOpen: true } first
+                        && first.CharacterRuntimes.Any(runtime => runtime.Process.Running),
+                    TimeSpan.FromSeconds(15)).ConfigureAwait(false);
+                Check(
+                    secondClosed is not null,
+                    "closing the second library leaves the first library interactive");
+
                 await InvokeAsync(connection, "shutdown").ConfigureAwait(false);
             }
 
@@ -301,11 +378,31 @@ internal static class TopologySmokeTest
         return null;
     }
 
-    private static async Task InvokeAsync(IpcClientConnection connection, string method)
+    private static LibraryTopologyStatus? FindLibrary(
+        GlobalStatus status,
+        string libraryPath) =>
+        status.Libraries?.FirstOrDefault(library => PathsEqual(library.LibraryPath, libraryPath));
+
+    private static bool PathsEqual(string left, string right)
+    {
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
+        return string.Equals(
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(left)),
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(right)),
+            comparison);
+    }
+
+    private static async Task InvokeAsync(
+        IpcClientConnection connection,
+        string method,
+        System.Text.Json.JsonElement? parameters = null)
     {
         var response = await connection.InvokeAsync(
             method,
-            parameters: null,
+            parameters,
             timeout: TimeSpan.FromSeconds(30)).ConfigureAwait(false);
 
         if (response.Ok == false)

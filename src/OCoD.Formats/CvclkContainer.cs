@@ -35,7 +35,8 @@ public sealed record CvclkReadResult(
     string PayloadJson,
     bool IsPlainJson,
     int HeaderVersion,
-    bool Locked);
+    bool Locked,
+    bool HasOwner = false);
 
 /// <summary>Reads and writes the cvclk-v2 container described in docs/specs/container-v2.md.</summary>
 public static class CvclkContainer
@@ -141,6 +142,7 @@ public static class CvclkContainer
 
         var headerVersion = 0;
         var locked = false;
+        var hasOwner = false;
 
         try
         {
@@ -172,17 +174,12 @@ public static class CvclkContainer
             {
                 locked = true;
             }
+
+            hasOwner = root.TryGetProperty("owner", out _);
         }
         catch (JsonException exception)
         {
             throw new CvclkFormatException(CvclkError.Corrupt, "The cvclk header is invalid JSON.", exception);
-        }
-
-        if (locked)
-        {
-            throw new CvclkFormatException(
-                CvclkError.Protected,
-                "Protected cvclk packages are not supported by this importer yet.");
         }
 
         var key = new byte[32];
@@ -220,7 +217,19 @@ public static class CvclkContainer
         try
         {
             var payload = StrictUtf8.GetString(payloadBytes);
-            return new CvclkReadResult(payload, IsPlainJson: false, headerVersion, Locked: false);
+
+            if (locked || hasOwner)
+            {
+                throw new CvclkFormatException(
+                    CvclkError.Protected,
+                    "Protected cvclk packages are not supported by this importer yet.");
+            }
+
+            return new CvclkReadResult(
+                payload,
+                IsPlainJson: false,
+                headerVersion,
+                Locked: false);
         }
         catch (DecoderFallbackException exception)
         {

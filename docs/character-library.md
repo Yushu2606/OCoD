@@ -1,6 +1,6 @@
 # 角色导入与角色库
 
-本文对应工单 #6：导入普通角色包并持久化到角色库。当前只实现普通 `.cvclk` 的导入；受保护包、旧版 JSON、部件包、台词文件和再导出分别由后续工单处理。
+本文对应工单 #6：导入普通角色包并持久化到角色库。当前只实现普通 `.cvclk` 的导入；受保护包、旧版 JSON、部件包、台词文件和再导出分别由后续工单处理。普通导入会明确拒绝任何受保护标记。
 
 ## 导入入口
 
@@ -25,7 +25,7 @@ dotnet run --project src/OCoD.Launcher -- --stop-character <id>
 - `imageUrls` 仅在本地图像缺失/无效时作为 HTTP(S) 回退，单个图像上限 8 MiB。
 - 角色名缺失时依次回退包内 `id` 和本地化未命名角色。
 - 未知字段不会阻塞导入：角色原始 JSON 保存在角色记录中，供后续再导出与字段保真使用。
-- 受保护 `.cvclk`（容器头 `locked=true`）当前会被拒绝；由 #9 接入。
+- 普通导入按 [container-v2.md](specs/container-v2.md) 第 7 节和 [protected-cvclk.md](specs/protected-cvclk.md) 检查权限标记：容器头 `locked=true`、容器头存在 `owner`、任一角色载荷 `editLock=true`。检测到任一标记就拒绝整个文件并返回“受保护包不支持”，不会把只带编辑锁或口令标记的包当作普通包导入。`editBase`/`editSty` 单独存在不构成交换标记，按契约忽略。受保护包支持由 #9 接入。
 - 纯 JSON 旧版角色当前不会被当作 `bug-clicker` 导入；由 #10 接入。
 
 ## 角色库布局
@@ -49,7 +49,7 @@ dotnet run --project src/OCoD.Launcher -- --stop-character <id>
         ...
 ```
 
-`index.json` 是管理窗口列表的依据；角色目录和索引都由库级守护进程提交。角色 ID 为本地生成的 32 位十六进制 ID，不沿用包内 `id`。
+`index.json` 是管理窗口列表的依据；角色目录和索引都由库级守护进程提交。每次导入先在新建角色目录写入全部图像和 JSON，最后原子替换 `index.json`；索引提交失败或导入中断时，本次新建的角色目录会回滚删除。库级守护进程启动时还会对账 `characters/` 与索引：完整但未入索引的目录会补入索引并恢复缺失的默认 `settings.json`，不完整目录和悬空索引项会被清理。角色 ID 为本地生成的 32 位十六进制 ID，不沿用包内 `id`。
 
 ### character.json
 
@@ -87,6 +87,7 @@ dotnet run --project src/OCoD.Launcher -- --stop-character <id>
 - macOS：默认共享库 `~/Library/Application Support/OCoD/Library`；移动启动器不影响库。
 - Windows：启动器同目录的 `OCoDData\Library`；每个分发目录默认独立库，移动整个目录时库随之移动。全局运行时数据仍位于 `%LOCALAPPDATA%\OCoD`。
 - `--library` / `OCOD_LIBRARY` 可覆盖默认库；`--data-dir` / `OCOD_DATA_DIR` 可覆盖运行时数据目录。
+- 同一个全局守护进程可同时服务多个库（例如两个 Windows 分发目录）。各库的库级守护进程、角色运行时和管理窗口互相独立；关闭一个库的管理窗口或停止其运行时不会影响其他库。
 
 ## 已知限制
 

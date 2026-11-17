@@ -12,6 +12,7 @@
   "Tray.ClickThrough": "鼠标穿透",
   "Tray.Exit": "退出 OCoD",
   "Tray.OpenManagement": "打开角色库管理",
+  "Tray.Libraries": "角色库",
   "Management.Title": "OCoD 角色库管理",
   "Management.LibraryPath": "角色库路径：{0}",
   "Management.GlobalDaemon": "全局守护进程",

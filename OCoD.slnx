@@ -12,6 +12,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/OCoD.Formats.Tests/OCoD.Formats.Tests.csproj" />
+    <Project Path="tests/OCoD.LibraryDaemon.Tests/OCoD.LibraryDaemon.Tests.csproj" />
     <Project Path="tests/OCoD.Localization.Tests/OCoD.Localization.Tests.csproj" />
     <Project Path="tests/OCoD.Protocol.Tests/OCoD.Protocol.Tests.csproj" />
   </Folder>

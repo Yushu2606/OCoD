@@ -22,6 +22,7 @@ public static class LocKeys
     public const string TrayClickThrough = "Tray.ClickThrough";
     public const string TrayExit = "Tray.Exit";
     public const string TrayOpenManagement = "Tray.OpenManagement";
+    public const string TrayLibraries = "Tray.Libraries";
 
     public const string ManagementTitle = "Management.Title";
     public const string ManagementLibraryPath = "Management.LibraryPath";

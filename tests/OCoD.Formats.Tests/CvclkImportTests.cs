@@ -77,6 +77,64 @@ public sealed class CvclkImportTests
         Assert.Equal("gif", character.Images["head3"].Extension);
     }
 
+    [Theory]
+    [InlineData("locked-no-owner.cvclk")]
+    [InlineData("locked-owner.cvclk")]
+    [InlineData("editlock.cvclk")]
+    [InlineData("editlock-recovery.cvclk")]
+    [InlineData("editlock-owner-reexport.cvclk")]
+    [InlineData("locked-owner-editlock.cvclk")]
+    public async Task Normal_import_rejects_every_protected_marker(string fileName)
+    {
+        var path = Path.Combine(RepositoryRoot, "samples", "protected", fileName);
+
+        var exception = await Assert.ThrowsAsync<CvclkFormatException>(async () =>
+        {
+            var payload = await CvclkContainer.ReadFileAsync(path);
+            await CvclkImporter.ImportAsync(
+                payload.PayloadJson,
+                new CvclkImporterOptions
+                {
+                    HttpClient = null,
+                });
+        });
+
+        Assert.Equal(CvclkError.Protected, exception.Error);
+    }
+
+    [Fact]
+    public async Task Edit_base_without_edit_lock_is_not_a_protection_marker()
+    {
+        const string payload = """
+            {
+              "format": "bug-clicker",
+              "version": 1,
+              "characters": [
+                {
+                  "id": "plain-with-baseline",
+                  "name": "Plain with baseline",
+                  "editLock": false,
+                  "editBase": { "lines": ["old"] },
+                  "editSty": { "lines": [""] },
+                  "images": {
+                    "body": "data:image/png;base64,iVBORw0KGgo="
+                  }
+                }
+              ]
+            }
+            """;
+
+        var import = await CvclkImporter.ImportAsync(
+            payload,
+            new CvclkImporterOptions
+            {
+                HttpClient = null,
+            });
+
+        var character = Assert.Single(import.Characters);
+        Assert.Equal("Plain with baseline", character.Name);
+    }
+
     [Fact]
     public async Task Tampered_ciphertext_is_rejected()
     {

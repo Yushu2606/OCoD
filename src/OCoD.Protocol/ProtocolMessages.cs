@@ -108,7 +108,9 @@ public sealed record CharacterImageResponse(
 
 public sealed record SaveRunSettingsRequest(string CharacterId, CharacterRunSettings Settings);
 
-public sealed record CharacterIdRequest(string CharacterId);
+public sealed record CharacterIdRequest(string CharacterId, string? LibraryPath = null);
+
+public sealed record LibraryPathRequest(string? LibraryPath = null);
 
 public sealed record CharacterState(
     bool Visible,
@@ -127,7 +129,7 @@ public sealed record CharacterHello(string Token, int Pid, string Version);
 
 public sealed record CharacterCommand(string Name, bool? Enabled, string? LanguageTag = null);
 
-public sealed record SetClickThroughRequest(bool Enabled);
+public sealed record SetClickThroughRequest(bool Enabled, string? LibraryPath = null);
 
 public sealed record ProcessInfo(
     string Name,
@@ -142,6 +144,13 @@ public sealed record CharacterRuntimeStatus(
     ProcessInfo Process,
     CharacterState? State);
 
+public sealed record LibraryTopologyStatus(
+    string LibraryPath,
+    string DisplayName,
+    bool ManagementWindowOpen,
+    ProcessInfo LibraryDaemon,
+    List<CharacterRuntimeStatus> CharacterRuntimes);
+
 public sealed record GlobalStatus(
     int Pid,
     string Version,
@@ -151,7 +160,8 @@ public sealed record GlobalStatus(
     ProcessInfo LibraryDaemon,
     ProcessInfo CharacterRuntime,
     CharacterState? CharacterState,
-    List<CharacterRuntimeStatus>? CharacterRuntimes = null);
+    List<CharacterRuntimeStatus>? CharacterRuntimes = null,
+    List<LibraryTopologyStatus>? Libraries = null);
 
 public sealed record CommandResult(bool Accepted, string? Message = null);
 
@@ -183,9 +193,12 @@ public sealed record CommandResult(bool Accepted, string? Message = null);
 [JsonSerializable(typeof(CharacterImageResponse))]
 [JsonSerializable(typeof(SaveRunSettingsRequest))]
 [JsonSerializable(typeof(CharacterIdRequest))]
+[JsonSerializable(typeof(LibraryPathRequest))]
 [JsonSerializable(typeof(CharacterState))]
 [JsonSerializable(typeof(CharacterRuntimeStatus))]
 [JsonSerializable(typeof(List<CharacterRuntimeStatus>))]
+[JsonSerializable(typeof(LibraryTopologyStatus))]
+[JsonSerializable(typeof(List<LibraryTopologyStatus>))]
 [JsonSerializable(typeof(List<string>))]
 [JsonSerializable(typeof(CharacterHello))]
 [JsonSerializable(typeof(CharacterCommand))]

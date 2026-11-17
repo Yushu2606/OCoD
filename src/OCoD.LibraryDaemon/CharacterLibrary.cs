@@ -45,6 +45,8 @@ internal sealed class CharacterLibrary
                     CharacterLibraryJsonContext.Default.StoredIndex,
                     cancellationToken).ConfigureAwait(false);
             }
+
+            await RecoverAsync(cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -61,6 +63,8 @@ internal sealed class CharacterLibrary
 
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         Interlocked.Increment(ref _pendingWrites);
+        var createdDirectories = new List<string>();
+        var indexCommitted = false;
 
         try
         {
@@ -88,6 +92,7 @@ internal sealed class CharacterLibrary
                 try
                 {
                     Directory.CreateDirectory(characterDirectory);
+                    createdDirectories.Add(characterDirectory);
                     var imagesDirectory = Path.Combine(characterDirectory, "images");
                     Directory.CreateDirectory(imagesDirectory);
 
@@ -177,11 +182,21 @@ internal sealed class CharacterLibrary
                 index,
                 CharacterLibraryJsonContext.Default.StoredIndex,
                 cancellationToken).ConfigureAwait(false);
+            indexCommitted = true;
 
             return new CharacterImportResult(imported, skipped);
         }
         finally
         {
+            if (!indexCommitted)
+            {
+                foreach (var directory in createdDirectories)
+                {
+                    _log($"rolling back unindexed character directory '{directory}'");
+                    TryDeleteDirectory(directory);
+                }
+            }
+
             Interlocked.Decrement(ref _pendingWrites);
             _gate.Release();
         }
@@ -400,6 +415,205 @@ internal sealed class CharacterLibrary
             ?? new StoredIndex(SchemaVersion, []);
     }
 
+    /// <summary>
+    /// Reconciles the index with the character directories after an interrupted import or a
+    /// previous commit failure. Complete orphan records are re-indexed; partial directories are
+    /// removed and stale index entries are dropped.
+    /// </summary>
+    private async Task RecoverAsync(CancellationToken cancellationToken)
+    {
+        StoredIndex index;
+        var indexInvalid = false;
+
+        try
+        {
+            index = await ReadIndexAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (JsonException exception)
+        {
+            _log($"character index is invalid and will be rebuilt: {exception.Message}");
+            index = new StoredIndex(SchemaVersion, []);
+            indexInvalid = true;
+        }
+
+        var entries = index.Characters.ToDictionary(entry => entry.Id, StringComparer.Ordinal);
+        var validIds = new HashSet<string>(StringComparer.Ordinal);
+        var changed = false;
+
+        foreach (var directory in Directory.EnumerateDirectories(_charactersDirectory))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var id = Path.GetFileName(directory);
+
+            if (!IsValidCharacterId(id))
+            {
+                continue;
+            }
+
+            var (stored, transientFailure) = await TryReadRecoverableCharacterAsync(
+                id,
+                cancellationToken).ConfigureAwait(false);
+
+            if (stored is null)
+            {
+                if (transientFailure)
+                {
+                    validIds.Add(id);
+                }
+
+                continue;
+            }
+
+            if (!HasRecoverableImages(id, stored))
+            {
+                _log($"removing incomplete character directory '{id}'");
+                TryDeleteDirectory(directory);
+                entries.Remove(id);
+                changed = true;
+                continue;
+            }
+
+            validIds.Add(id);
+            var entry = new StoredIndexEntry(
+                stored.Id,
+                stored.Name,
+                stored.StartSize,
+                stored.ImportedAtUtc,
+                stored.SourceFile);
+
+            if (!entries.TryGetValue(id, out var indexed))
+            {
+                entries[id] = entry;
+                index.Characters.Add(entry);
+                changed = true;
+                _log($"recovered orphaned character '{stored.Name}' as {id}");
+            }
+            else if (indexed != entry)
+            {
+                var position = index.Characters.IndexOf(indexed);
+                if (position >= 0)
+                {
+                    index.Characters[position] = entry;
+                }
+
+                entries[id] = entry;
+                changed = true;
+            }
+        }
+
+        var staleIds = index.Characters
+            .Select(entry => entry.Id)
+            .Where(id => !validIds.Contains(id))
+            .ToList();
+
+        if (staleIds.Count > 0)
+        {
+            index.Characters.RemoveAll(entry => !validIds.Contains(entry.Id));
+            changed = true;
+
+            foreach (var id in staleIds)
+            {
+                _log($"dropping stale index entry '{id}'");
+            }
+        }
+
+        if (changed || indexInvalid)
+        {
+            await WriteJsonAsync(
+                _indexPath,
+                index,
+                CharacterLibraryJsonContext.Default.StoredIndex,
+                cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task<(StoredCharacter? Stored, bool TransientFailure)>
+        TryReadRecoverableCharacterAsync(
+            string characterId,
+            CancellationToken cancellationToken)
+    {
+        StoredCharacter? stored;
+        try
+        {
+            stored = await ReadCharacterAsync(characterId, cancellationToken).ConfigureAwait(false);
+        }
+        catch (FileNotFoundException)
+        {
+            _log($"removing character directory '{characterId}' without a character record");
+            TryDeleteDirectory(Path.Combine(_charactersDirectory, characterId));
+            return (null, false);
+        }
+        catch (JsonException exception)
+        {
+            _log($"removing character directory '{characterId}' with an invalid record: {exception.Message}");
+            TryDeleteDirectory(Path.Combine(_charactersDirectory, characterId));
+            return (null, false);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException)
+        {
+            // A transient read failure must not cause an index entry to be dropped.
+            _log($"could not inspect character directory '{characterId}': {exception.Message}");
+            return (null, true);
+        }
+
+        if (!string.Equals(stored.Id, characterId, StringComparison.Ordinal)
+            || string.IsNullOrWhiteSpace(stored.Name)
+            || string.IsNullOrWhiteSpace(stored.RawCharacterJson))
+        {
+            _log($"removing character directory '{characterId}' with an inconsistent record");
+            TryDeleteDirectory(Path.Combine(_charactersDirectory, characterId));
+            return (null, false);
+        }
+
+        if (!File.Exists(GetCharacterPath(characterId, "settings.json")))
+        {
+            var defaultSize = stored.StartSize is >= 60 and <= 600
+                ? stored.StartSize
+                : DefaultCharacterSize;
+
+            try
+            {
+                await WriteJsonAsync(
+                    GetCharacterPath(characterId, "settings.json"),
+                    new StoredSettings(
+                        defaultSize,
+                        defaultSize,
+                        null,
+                        null,
+                        Flipped: false,
+                        Topmost: false,
+                        Locked: false),
+                    CharacterLibraryJsonContext.Default.StoredSettings,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (
+                exception is IOException or UnauthorizedAccessException)
+            {
+                _log($"could not restore settings for '{characterId}': {exception.Message}");
+            }
+        }
+
+        return (stored, false);
+    }
+
+    private bool HasRecoverableImages(string characterId, StoredCharacter stored)
+    {
+        foreach (var image in stored.Images)
+        {
+            try
+            {
+                _ = ResolveCharacterFile(characterId, image.File);
+            }
+            catch (FileNotFoundException)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private string GetCharacterPath(string characterId, string fileName)
     {
         if (!IsValidCharacterId(characterId))
@@ -473,14 +687,39 @@ internal sealed class CharacterLibrary
         var temporaryPath = path + ".tmp";
         var json = JsonSerializer.Serialize(value, typeInfo);
 
-        await File.WriteAllTextAsync(temporaryPath, json, cancellationToken).ConfigureAwait(false);
-        File.Move(temporaryPath, path, overwrite: true);
+        try
+        {
+            await File.WriteAllTextAsync(temporaryPath, json, cancellationToken).ConfigureAwait(false);
+            File.Move(temporaryPath, path, overwrite: true);
+        }
+        catch
+        {
+            TryDeleteFile(temporaryPath);
+            throw;
+        }
     }
 
     private static DateTimeOffset ParseDate(string value) =>
         DateTimeOffset.TryParse(value, out var date) ? date : default;
 
-    private static void TryDeleteDirectory(string path)
+    private static void TryDeleteFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
+
+    private void TryDeleteDirectory(string path)
     {
         try
         {
@@ -489,11 +728,10 @@ internal sealed class CharacterLibrary
                 Directory.Delete(path, recursive: true);
             }
         }
-        catch (IOException)
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException)
         {
-        }
-        catch (UnauthorizedAccessException)
-        {
+            _log($"could not remove character directory '{path}': {exception.Message}");
         }
     }
 }

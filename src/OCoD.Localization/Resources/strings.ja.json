@@ -12,6 +12,7 @@
   "Tray.ClickThrough": "マウスを透過",
   "Tray.Exit": "OCoD を終了",
   "Tray.OpenManagement": "キャラクターライブラリを開く",
+  "Tray.Libraries": "ライブラリ",
   "Management.Title": "OCoD キャラクターライブラリ",
   "Management.LibraryPath": "ライブラリの場所：{0}",
   "Management.GlobalDaemon": "グローバルデーモン",
