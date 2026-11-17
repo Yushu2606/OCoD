@@ -39,6 +39,7 @@ character package import and persistence) are implemented:
 - The global daemon provides a macOS menu bar / Windows notification-area icon and the library management window; empty libraries are supported, and process PIDs, versions, states and library clients are visible.
 - One global daemon serves several character libraries side by side: each library keeps its own library daemon, runtime and management window; the tray submenu opens each library, and closing one library does not affect the others.
 - Simplified Chinese, English, Japanese and Korean resource entry points; any Chinese region falls back to Simplified Chinese; the global daemon pushes language changes to character runtimes.
+- Normal `.cvclk` import rejects every protected marker (`header.locked`, `header.owner`, payload `editLock`) for the whole file; protected-package support remains a later ticket.
 - Protected packages, legacy JSON, part packages / line files, idle and click animations, re-export, installation/update and the editor belong to later tickets.
 
 ## Quick start

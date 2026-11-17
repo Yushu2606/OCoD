@@ -1,6 +1,6 @@
 # 构建、发布与运行
 
-本文覆盖工单 #4（桌面角色外壳）和 #5（进程拓扑、库级守护进程与管理窗口）。所有命令默认在仓库根目录执行。
+本文覆盖工单 #4（桌面角色外壳）、#5（进程拓扑、库级守护进程与管理窗口）和 #6（普通角色包导入），包括多库并行与角色库恢复。所有命令默认在仓库根目录执行。
 
 ## 先决条件
 
@@ -193,7 +193,9 @@ $LASTEXITCODE
 - macOS arm64 角色导入：开发态与 AOT `--import` 均通过；`plain-minimal`、`plain-multi`、`plain-full` 导入成功，多角色/名称回退/图层合成与起始大小已截图确认；管理窗口列出、启动、停止角色；通过菜单修改翻转、拖动边缘缩放后设置写回，停止再启动恢复大小/翻转/置顶；多角色同时运行且重复启动同一角色不新增进程。
 - macOS arm64 多库、受保护包与恢复：开发态与 AOT 均验证库 A 运行时打开库 B、从 B 导入并启动角色、关闭 B 管理窗口后 A 仍可重启运行时并交互；两库库级守护进程 PID 不同；拓扑冒烟新增的多库检查通过。`editlock.cvclk`、`editlock-owner-reexport.cvclk` 等 6 个受保护样本通过普通导入均整文件返回 Protected；`editBase`/`editSty` 单独存在不误拒。角色库索引提交失败回滚与启动时索引对账由 5 项 LibraryDaemon 测试覆盖。
 - Windows 10 22H2（19045，x64）：全部组件完成 `win-x64` 托管编译（0 警告 0 错误）；SSH 会话中的拓扑冒烟通过；交互式桌面会话中的角色外壳冒烟通过（透明窗口、四语切换、翻转/锁定/置顶/缩放、鼠标穿透开关）。
-- Windows 10 Native AOT：使用 Visual Studio 2026 的 MSVC 14.52 工具链，四个组件均发布到 `win-aot`；AOT 拓扑冒烟以退出码 0 通过，AOT 导入 `plain-minimal.cvclk` 后角色窗口以 160×160 显示实际角色图层，管理窗口列出角色与运行状态。通过 `--set-settings` 保存 200×180、水平翻转和置顶后停止并重新启动角色，窗口尺寸变为 200×180，状态报告翻转/置顶已恢复，`settings.json` 与截图一致。通知区域图标在溢出区域确认（本机交互桌面会话处于锁定状态，窗口用 `PrintWindow` 截图；全屏抓取不可用）。本轮多库、受保护包与角色库恢复改动已在 macOS 开发态/AOT 验证；Windows AOT 复验因测试机 SSH 端口在复验时不可达，尚待测试机恢复后重跑。
+- Windows 10 22H2 新测试机（DESKTOP-ETJJIIM）：Release 构建 0 警告 0 错误，63 项测试全部通过（含 Windows `UnauthorizedAccessException` 提交失败分支）；托管发布 `dist-a` / `dist-b` 双分发目录验证：A 占位运行中，B 导入 `plain-minimal.cvclk` 并启动角色，两库库级守护进程 PID 不同；关闭 B 管理窗口后 A `--restart-runtime` 成功启动新 PID；`editlock-owner-reexport.cvclk` 被整文件拒绝。
+- Windows 10 Native AOT（旧测试机，单库基线）：使用 Visual Studio 2026 的 MSVC 14.52 工具链，四个组件均发布到 `win-aot`；AOT 拓扑冒烟以退出码 0 通过，AOT 导入 `plain-minimal.cvclk` 后角色窗口以 160×160 显示实际角色图层，管理窗口列出角色与运行状态。通过 `--set-settings` 保存 200×180、水平翻转和置顶后停止并重新启动角色，窗口尺寸变为 200×180，状态报告翻转/置顶已恢复，`settings.json` 与截图一致。通知区域图标在溢出区域确认（本机交互桌面会话处于锁定状态，窗口用 `PrintWindow` 截图；全屏抓取不可用）。
+- Windows 10 Native AOT（新测试机 DESKTOP-ETJJIIM，最终 `9bf0064`）：VS Build Tools 2026 18.12.12405.243，MSVC 14.52.37025，Windows SDK 10.0.26100.0。四个组件重发布成功（BuildTools 未被 vswhere 登记，使用 `vcvars64` 环境加 `-p:IlcUseEnvironmentalTools=true`）；AOT 拓扑冒烟 27 项全部通过。AOT `dist-a`/`dist-b` 双分发目录：A 占位运行中，B 导入 `plain-minimal.cvclk` 并启动角色，两库级守护进程 PID 不同（21088 / 4428）；关闭 B 管理窗口后 A `--restart-runtime` 成功启动新 PID（14296），B 角色仍运行；`editlock-owner-reexport.cvclk` 被 AOT 整文件拒绝。
 - macOS Intel（`osx-x64`）：尚未在 Intel 机器上执行。
 
 ## 排查
@@ -207,4 +209,5 @@ $LASTEXITCODE
 - IPC 端点位于系统临时目录的 `ocod/` 下，按路径哈希命名；正常退出会删除对应 socket 文件。
 - 鼠标穿透后无法通过角色窗口菜单恢复：这是预期行为，使用全局守护进程的托盘/菜单栏入口。
 - AOT 发布报缺少链接器：确认 Windows 安装了 C++ 生成工具和 Windows SDK，macOS 安装了 Xcode Command Line Tools。
+- Windows 上确认 MSVC 与 Windows SDK 已安装，但 NativeAOT 仍报 `Platform linker not found`（常见于 BuildTools 未被 vswhere 登记）：先在 `vcvars64.bat` 环境中运行 `dotnet publish`，并加 `-p:IlcUseEnvironmentalTools=true`，让 NativeAOT 使用 `PATH` 中的 `link.exe`/`lib.exe` 与 `LIB` 中的 SDK 库。
 - 首版只交付 Windows 与 macOS；Linux 不在当前范围。
