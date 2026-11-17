@@ -18,6 +18,8 @@
 
 **口令是公开的测试口令**，只用于验证恢复流程；不是作者的真实密码。
 
+**标记互相独立，普通导入也必须识别**：`editlock.cvclk`、`editlock-recovery.cvclk`、`editlock-owner-reexport.cvclk` 的头部 `locked=false`，但载荷 `editLock=true`，仍属于编辑锁定包；普通导入不得把它们当普通角色接受。实现暂不支持受保护包时，必须在检测到任一 `locked`/`editLock`/`owner` 后拒绝整个文件，不能只拒绝头部 `locked=true` 的文件。完整路由见 [`docs/specs/container-v2.md` 第 7 节](../../docs/specs/container-v2.md) 与 [`docs/specs/protected-cvclk.md` 第 1.1 节](../../docs/specs/protected-cvclk.md)。
+
 ## 2. 预期导入结果
 
 所有样本的角色图像都是 480×480 透明 PNG（`BODY`/`HEAD1`/`HEAD2` 标签），便于肉眼确认导入成功。角色名与作者信息见 `expected/protected/*.expected.json`。

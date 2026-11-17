@@ -68,6 +68,7 @@ JSON 示例中的字段顺序不构成契约；字段存在与否、类型、取
 受保护 `.cvclk` 与锁定 `.cvpart` 的契约见 [protected-cvclk.md](protected-cvclk.md)。第 1 张票（GitHub #2）只记录普通包共享字段和缺口；第 2 张票（GitHub #3）已补齐：
 
 - 容器头部 `locked` / `owner` 的语义与生成、校验。
+- 普通导入对 `locked`、`editLock`、`owner` 三类标记的识别与逐角色路由；不支持受保护包时也必须识别全部标记（见 [container-v2.md](container-v2.md) 第 7 节、[protected-cvclk.md](protected-cvclk.md) 第 1.1 节）。
 - 角色字段 `editLock`、`editBase`、`editSty` 的基线、合并与编辑白名单。
 - 口令恢复流程与错误路径。
 - 再导出限制、编辑限制、受保护 `.cvpart` 行为。
@@ -94,6 +95,7 @@ JSON 示例中的字段顺序不构成契约；字段存在与否、类型、取
 - `samples/expected/**`（预期摘要，含 `expected/protected/**`）。
 - `samples/SHA256SUMS.handoff`（交付清单）。
 - `samples/README.md`、`samples/VERIFICATION.md`、`samples/PROVENANCE.md`（说明文档）。
+- `docs/handoff/README.md` 与 `docs/handoff/MANIFEST.sha256`（独立交接快照的说明与逐文件哈希；接收记录见 `docs/handoff/RECEIPT.md`）。
 
 **不交给实现方**：
 
@@ -103,6 +105,10 @@ JSON 示例中的字段顺序不构成契约；字段存在与否、类型、取
 - 任何原作 ASAR 解包产物。
 
 逐文件来源见 [`samples/PROVENANCE.md`](../../samples/PROVENANCE.md)。若实现方发现事实缺口，由分析方补充规格或新增自製样本，不直接转交对照夹具。
+
+## 交接快照
+
+按 [ADR-0007](../adr/0007-cleanroom-handoff.md)，实际交付集合以独立的 `OCoD-handoff-2026-11-17` 快照为准，不以下面整个公开仓为准。快照说明与方法见 [`docs/handoff/README.md`](../handoff/README.md)，逐文件哈希见 [`docs/handoff/MANIFEST.sha256`](../handoff/MANIFEST.sha256)，交付记录见 [`docs/handoff/RECEIPT.md`](../handoff/RECEIPT.md)。公开仓中的 `samples/verification/**` 与 `tools/cleanroom/**` 是分析方专用，不属于快照。
 
 ## 样本与验证
 

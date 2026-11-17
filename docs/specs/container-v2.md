@@ -131,14 +131,33 @@ SEALED = NONCE || TAG || CT
 - `locked` 字段始终存在；普通包写 `false`。
 - 头部 `version` 与上表一致；不要写载荷内的 `version` 到头部。
 
-## 7. 普通包与受保护包的区别
+## 7. 权限标记与普通/受保护包判定
 
-| 项目 | 普通包 | 受保护包 |
+`.cvclk` 的权限由三个**互相独立**的标记组成：头部 `locked`、头部 `owner`、角色载荷 `editLock`。`locked` 只限制再导出，`editLock` 只限制编辑，二者不得互相替代；`owner` 只提供口令恢复路径。
+
+| 标记 | 位置 | 作用 |
 | --- | --- | --- |
-| 头部 `locked` | `false` | `true` |
-| 头部 `owner` | 不存在 | 可存在 |
-| 载荷角色字段 `editLock` | 不存在或 `false` | 可为 `true` |
-| 接收者再导出 | 允许 | 禁止 |
+| `locked` | 容器头部 | `true` 时接收者不能再导出该角色 |
+| `owner` | 容器头部 | 可选作者口令哈希；存在时导入可校验口令 |
+| `editLock` | 每个角色载荷 | `true` 时该角色的原始台词、样式、声音只读，只能追加 |
+| `editLocked` | 导入后的本地模型 | **不是交换字段**；由 `editLock` 推导，读取方不得期待它出现在载荷中 |
+
+判定规则：
+
+| 头部 `locked` | 角色 `editLock` | 头部 `owner` | 判定与导入后行为 |
+| --- | --- | --- | --- |
+| `false` | `false`/缺失 | 无 | 普通角色：正常导入、可编辑、可再导出 |
+| `true` | `false`/缺失 | 可选 | 再导出锁：导入成功；`locked=true`；不能再导出 |
+| `false` | `true` | 可选 | 编辑锁：导入成功；`editLocked=true`；原文只读、只能追加；可再导出（除非另有 `locked`） |
+| `true` | `true` | 可选 | 双重锁：导入成功；`locked=true` + `editLocked=true` |
+| 任意 | 任意 | 有 | 口令包：走口令流程；无口令按收到状态导入，正确口令完全解锁 |
+
+**普通导入的路由要求**：
+
+- 所有 `.cvclk` 都先走同一条容器解密流程，然后**逐角色**检查 `header.locked`、`header.owner` 与 `payload.editLock`。不得因为 `locked:false` 就跳过 `editLock` 检查，也不得把 `editLock:true` 的角色当普通角色接受。
+- 支持受保护包的实现：按 [protected-cvclk.md](protected-cvclk.md) 第 5 节导入并应用对应权限；同一文件可以混合普通角色与受保护角色，普通角色不得因其他角色带标记而丢失。
+- 暂不支持受保护包的实现：必须在解密后检测**任一**受保护标记（`locked:true`、`editLock:true` 或 `owner` 存在），发现后拒绝整个文件并返回明确的“受保护包不支持”错误；不得只拒绝 `locked:true`，却把 `editLock:true`/`owner` 文件当普通包导入。拒绝整文件是可接受的降级，但识别必须覆盖全部标记。
+- `.cvpart` 只有头部 `locked`；同样必须在导入前检查，不能按普通部件接受。
 
 两种包使用完全相同的容器算法。读取方**不得**因为 `locked: false` 就跳过解密或按明文 JSON 读取；所有 `.cvclk` / `.cvpart` 都是容器格式。
 

@@ -13,6 +13,7 @@
 | 文档 | `samples/README.md`、`samples/VERIFICATION.md`、`samples/protected/README.md`、`samples/protected/VERIFICATION.md`、本文件 | **可交付** | 使用说明与实机验收清单 |
 | 原作对照夹具 | `samples/verification/**`、`samples/protected/verification/**` | **仅分析方** | 原作模块级再导出结果；用于分析方对照，不流向实现方 |
 | 实机证据 | 仓外私有目录 | **仅分析方** | Windows / macOS 实机验收截图与说明；不随公开仓库提交 |
+| 交接快照 | 仓外（与仓库同级）`OCoD-handoff-2026-11-17/`；清单见 `docs/handoff/` | **可交付** | 按 `SHA256SUMS.handoff` + 允许文档导出；不含 `samples/verification/**`、`tools/**` 或证据 |
 | 分析工具 | `tools/cleanroom/**` | **仅分析方** | 生成/校验工具；实现方不需要，也不作为实现参考 |
 | 全量清单 | `samples/SHA256SUMS` | **仅分析方** | 含 `verification/` 哈希，实现方用 `.handoff` |
 | 原作解包产物 | 仓库外 `/tmp` 等 | **仅分析方** | 不进入仓库，不流向实现方 |
@@ -22,10 +23,10 @@
 | 文件（相对 `samples/`） | 来源 | 实现方 | SHA-256 |
 | --- | --- | --- | --- |
 | `PROVENANCE.md` | 文档 | 可交付 | （本文件，不计算自身哈希） |
-| `README.md` | 文档 | 可交付 | `15a21746c70a0ee3fc91fa26fa7c6a92908e9edd48a609eb503021655915131a` |
+| `README.md` | 文档 | 可交付 | `33677808ff6110c705a6c06ae59543274579b2bdb5c45ca26eeb86327b0881ef` |
 | `SHA256SUMS` | 分析方全量清单 | 仅分析方 | `882bd52de2124ec3d994d9f2a6d1bd8e6524b31e0cc3f57f63ba67dccd2bb7a4` |
 | `SHA256SUMS.handoff` | 实现方交付清单 | 可交付 | `b501385338ade1b2ca228069fd5e70698bf85dd0875091e6550c877f72e5469d` |
-| `VERIFICATION.md` | 文档 | 可交付 | `44e65fbc3f490c57c1cd1e203caa351e7be6385f313e35dcfaadc5c4137ef558` |
+| `VERIFICATION.md` | 文档 | 可交付 | `41b0d05cf6475cac7ef8617a0a769e59874cac0f91384abfc1dde0cb4287c5d0` |
 | `cvclk/animated-gif.cvclk` | 自製样本 | 可交付 | `0c65697241c02a0fefe857b8e59b6d0a7704008eccad838445c54bc50a3e7b4f` |
 | `cvclk/plain-full.cvclk` | 自製样本 | 可交付 | `93547ce83b5829d182ff317dc5820b024364c63afe1f5239c193fb9422c35dd2` |
 | `cvclk/plain-minimal.cvclk` | 自製样本 | 可交付 | `480f573a6b867a5c9329b166e0555a8c419b10e67a94b094b7f670283d4616ee` |
@@ -61,8 +62,8 @@
 | `lines/click-idle.txt` | 自製样本 | 可交付 | `8aada4364515807dcfeac3f1edfffe2d04f6a40e3f4911feb9392e94016551b3` |
 | `lines/styles.txt` | 自製样本 | 可交付 | `13a1b7e48aae4a38c715be6a6904e29d7bfced3fb539bd7a2aeee425d5af4666` |
 | `lines/unsectioned.txt` | 自製样本 | 可交付 | `f5af1546aeb5f118f697ba32e14a79600ee9deee99ffe116a03aade4d1b71b9a` |
-| `protected/README.md` | 文档 | 可交付 | `1dc8beb76e17fa773e6580e5ff3b42c721e7728fb832f1f4e0616460fabba516` |
-| `protected/VERIFICATION.md` | 文档 | 可交付 | `de79409040258d498bc298fd906b573a81c46022bf081acefe58432fac319b1c` |
+| `protected/README.md` | 文档 | 可交付 | `2074ad8ea3780270f6e3f98269610e98016f3b491a7eab323a4ab97f746ffd1e` |
+| `protected/VERIFICATION.md` | 文档 | 可交付 | `294698fd633776d540bbe387cae73ac232a1ea997102e6be1eb837c3e0a1bbb1` |
 | `protected/editlock-owner-reexport.cvclk` | 自製样本 | 可交付 | `472dabec93f53bb2d3019b8cd08dd66c4b28e1d110362489c3708d2c62fa76e8` |
 | `protected/editlock-recovery.cvclk` | 自製样本 | 可交付 | `dd44f11ef52275631fbd333af335ef53c596aea558d7b2f543348636b1b33474` |
 | `protected/editlock.cvclk` | 自製样本 | 可交付 | `881afa9cca543188550f0e08121e3cb1de7d0b003f8752fa099e9139dde24852` |
@@ -96,12 +97,15 @@
 | `docs/specs/cvpart-v1.md` | 契约文档 | 可交付 | |
 | `docs/specs/lines-files.md` | 契约文档 | 可交付 | |
 | `docs/specs/protected-cvclk.md` | 契约文档 | 可交付 | |
-| `tools/cleanroom/samples.mjs` | 分析方工具 | 仅分析方 | 生成/校验/查看；不读取原作 |
+| `docs/handoff/README.md` | 交接说明 | 可交付 | 独立快照的范围、排除路径与校验方法 |
+| `docs/handoff/MANIFEST.sha256` | 交接清单 | 可交付 | 快照内容文件的 SHA-256 |
+| `docs/handoff/RECEIPT.md` | 交接记录 | 可交付 | 快照/归档哈希、接收方回执栏 |
+| `tools/cleanroom/samples.mjs` | 分析方工具 | 仅分析方 | 生成/校验/查看；不读取原作；不属于快照 |
 
 ## 4. 备注
 
 - 实机证据已移到仓外私有目录（分析方本地保留），不随公开仓库提交，也不列入本表或 `SHA256SUMS`。
-
+- 实现方交接以仓外（与仓库同级）`OCoD-handoff-2026-11-17/` 独立快照为准，清单为 `docs/handoff/MANIFEST.sha256`；公开仓里的 `samples/verification/**` 与 `tools/cleanroom/**` 是分析方专用，不进入快照。
 - `SHA256SUMS.handoff` 是给实现方的哈希清单；`SHA256SUMS` 是分析方全量清单。
 - 自製样本的生成器不读取原作、不联网；样本字节可离线重建（`samples/verification/` 除外，它由原作模块生成）。
 - 原作 ASAR 的解包内容只留在分析方工作目录，不提交到本仓库。

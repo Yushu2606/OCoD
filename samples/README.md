@@ -57,13 +57,15 @@ samples/
 | `legacy/carnovella-clicker.json` | 旧版 JSON；3 图；2 点击/1 自语 | `04d6ca7843eecbe081ca037e84262d1bdfccde69c37676305908826fb92d2f42` |
 | `legacy/carnovella-clicker-defaults.json` | 旧版 JSON；仅 `body`/`head1`，其余默认 | `fb60f48e7b079b3c232cd5bddd8e9837d7fd98030b6ea1596eb4caa229e486df` |
 
-`SHA256SUMS` 是分析方全量清单，包含 `expected/`、`protected/` 与 `verification/` 下全部文件。`SHA256SUMS.handoff` 是实现方交付清单，只含自製样本（含 `protected/`）与 `expected/`，不含 `verification/`。逐文件来源见 [`PROVENANCE.md`](PROVENANCE.md)。
+`SHA256SUMS` 是分析方全量清单，包含 `expected/`、`protected/` 与 `verification/` 下全部文件。`SHA256SUMS.handoff` 是实现方交付清单，只含自製样本（含 `protected/`）与 `expected/`，不含 `verification/`。逐文件来源见 [`PROVENANCE.md`](PROVENANCE.md)。实现方实际接收集合以 [`docs/handoff/README.md`](../docs/handoff/README.md) 所述独立快照与 `docs/handoff/MANIFEST.sha256` 为准；公开仓中的 `verification/` 与 `tools/cleanroom/` 不属于交付。
 
 受保护样本（`protected/` 下 7 个文件）的说明与口令见 [`protected/README.md`](protected/README.md)。
 
 ## 3. 受保护样本
 
 `samples/protected/` 是第 2 张票的固定样本，覆盖 `locked`、`editLock`、`owner` 口令恢复、编辑锁定和锁定部件。它们同样是自製样本，可由实现方使用；细节见 [`protected/README.md`](protected/README.md) 与 [`protected/VERIFICATION.md`](protected/VERIFICATION.md)。契约见 [`docs/specs/protected-cvclk.md`](../docs/specs/protected-cvclk.md)。
+
+**注意判定口径**：头部 `locked` 与载荷 `editLock` 独立。`editlock*.cvclk` 虽然头部 `locked=false`，仍是编辑锁定包；普通导入必须检查 `editLock`，不能只按头部 `locked` 判定。暂不支持受保护包的实现应在检测到任一 `locked`/`editLock`/`owner` 时拒绝整个文件，不能只拒绝 `locked=true`。详见 [`docs/specs/container-v2.md` 第 7 节](../docs/specs/container-v2.md)。
 
 ## 4. 预期可见语义
 

@@ -27,7 +27,19 @@
 - **`locked` 与 `editLocked` 独立**：`locked` 只限制再导出；`editLocked` 只限制编辑。二者可以单独出现或同时出现。
 - **`authorLocked` 与 `locked` 独立**：普通包如果带作者名，接收者的作者信息就是只读的；作者名为空时 `authorLocked=false`。
 - **口令匹配会同时解除 `locked`、`editLocked` 和 `authorLocked`**；它不会只解除其中一项。
-- **`protected` 不是交换字段**；“受保护包”在文件层指 `header.locked=true` 或 `editLock=true`；除口令匹配的解锁导入外，从容器导入的图像都会在本机密封保存。
+- **`protected` 不是交换字段**；它表示“来自容器且未凭口令解锁，因此图像在本机密封”，**不是**权限判定。权限判定看 `header.locked`、`payload.editLock` 与 `header.owner` 三个独立标记；文件层“受保护包”指其中任一存在。
+- **`editLocked` 不是交换字段**；它是 `payload.editLock === true` 的导入结果。读取方不得要求文件里出现 `editLocked`，也不得看到 `editLocked` 才应用编辑锁。
+
+### 1.1 普通导入的识别与路由
+
+普通导入不是一种独立文件格式：所有 `.cvclk` / `.cvpart` 都先按 [container-v2.md](container-v2.md) 解密，再在角色/部件层应用权限。
+
+- `.cvclk`：逐角色检查 `payload.editLock === true`，同时检查 `header.locked` 与 `header.owner`。任一标记存在，该角色必须按本节第 5 节处理；不得因为 `header.locked=false` 就跳过 `editLock`，也不得把 `editLock:true` 的角色当普通角色导入。
+- `editLocked` 是导入后的本地字段，不是交换标记；载荷里若作为未知字段出现，按未知字段保留但不产生权限，权限只由 `editLock`/`locked`/`owner` 决定。
+- `.cvpart`：检查头部 `locked`；`locked=true` 时部件按受保护部件导入，不能按普通部件接受。
+- 混合 `.cvclk`：每个角色独立判定；一个角色带标记不应导致同文件中的普通角色被丢弃。
+- 暂不支持受保护包的实现：必须在解密后检测**全部**标记（`locked`、`editLock`、`owner`），任一存在就拒绝整个文件并返回“受保护包不支持”；**不得只拒绝 `locked=true` 而接受 `editLock:true` / owner 文件**。这是允许的降级，但标记识别必须完整。
+- 口令流程只影响解锁结果，不改变“是否属于权限包”的判定；正确口令后 `owned=true`、`locked/editLocked/authorLocked=false`，图像按普通文件保存。
 
 ## 2. 容器头部
 
@@ -145,19 +157,19 @@ owner = { s: base64(salt), h: base64(hash) }
 
 ## 5. 导入算法
 
-读取容器、解析载荷后，对每个角色：
+读取容器、解析载荷后，对每个角色。`fromContainer` 只表示来源与图像密封策略，**不是**权限判定；权限由 `header.locked`、`header.owner` 与 `payload.editLock` 决定。
 
 ```
-1. prot = true（来自 BCVCLK2 容器）
+1. fromContainer = true（来自 BCVCLK2 容器；仅影响图像密封）
 2. locked = !!header.locked
 3. ownerPresent = !!header.owner
 4. owned = false
 5. 若导入方提供了 ownerCode：
      if (ownerPresent && ownerOk(header, ownerCode)):
          owned = true
-         prot = false
+         fromContainer = false
          locked = false
-6. 若 owned == false 且 prot == true 且 payload.editLock === true：
+6. 若 owned == false 且 fromContainer == true 且 payload.editLock === true：
      对每个 LINE_KEYS 键：
         t = 当前台词数组
         r = editBase 不存在
@@ -170,10 +182,10 @@ owner = { s: base64(salt), h: base64(hash) }
         if (l 是数组且含真值):
             local.editSty[key] = l.slice(0, r.length)
      local.editLocked = true
-7. local.protected = prot
-8. local.locked = prot && header.locked
+7. local.protected = fromContainer
+8. local.locked = fromContainer && header.locked
 9. local.authorLocked = !owned && author.name 非空
-10. 图像：prot ? 本机密封格式 : 普通文件
+10. 图像：fromContainer ? 本机密封格式 : 普通文件
 ```
 
 ### 5.1 口令匹配
@@ -306,6 +318,7 @@ owner = { s: base64(salt), h: base64(hash) }
 | 导入 `locked` 角色 | 成功导入；再导出被禁止 | `만든 사람이 다시 내보내기를 막아 두었습니다. 이 PC에서만 쓸 수 있습니다.` |
 | 导入 `editLock` 角色 | 成功导入；原始内容只读 | `만든 사람이 편집을 잠가 두었습니다. 이름 · 그림 · 파츠 · 원래 대사는 바꿀 수 없고, 새 대사만 더할 수 있습니다.` |
 | 受保护包提示 | 本地提示图像已密封 | `받은 캐릭터입니다. 그림은 이 PC에서만 열리도록 보호되어 있습니다.` |
+| 实现不支持受保护包 | 检测到任一 `locked`/`editLock`/`owner` 后整文件拒绝；不得只拒绝 `locked` | 本地化的“受保护包不支持”错误 |
 | 编辑锁定操作 | 返回 `{ok:false, locked:true}` | `보낸 사람이 편집을 잠가 둔 캐릭터입니다. 새 대사만 더할 수 있습니다.` |
 | 口令正确 | 解锁导入 | `비밀번호가 맞습니다. 잠금 없이 가져옵니다.` |
 | 口令错误 | 按原保护状态导入 | `비밀번호가 맞지 않습니다. 그대로 가져오면 받은 캐릭터로 들어옵니다. 계속 안 되면 X @BUGnDEV 로 DM 문의해 주세요.` |

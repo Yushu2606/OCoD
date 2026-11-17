@@ -234,6 +234,8 @@
 
 完整语义（锁定字段集合、合并规则、口令恢复、错误路径）见 [protected-cvclk.md](protected-cvclk.md)。普通包导出器不生成 `editBase`/`editSty`，并且 `editLock` 不是 `true`。
 
+**导入路由**：`header.locked` 与角色 `editLock` 是独立标记。读取方必须在解密后逐角色检查 `editLock`；即使 `header.locked=false`，只要某角色 `editLock=true` 或 `owner` 存在，该角色也必须按 [protected-cvclk.md](protected-cvclk.md) 第 1.1、5 节处理，不能按普通角色导入。暂不支持受保护包的读取方必须在检测到任一 `locked`/`editLock`/`owner` 时拒绝整个文件；不得只拒绝 `locked=true` 而接受 `editLock=true`。同一文件中的普通角色与受保护角色应逐角色处理。
+
 本地库字段 `protected`、`locked`、`authorLocked`、`soundFile`、`fontFile` 和本地 `rig` 数组**不是** `.cvclk` 交换字段；读取方不应期待它们出现在载荷中。交换格式用 `parts`、`sound` data URL、`font` data URL 等表达对应内容。
 
 ## 4. 作者字段 `author`
@@ -626,6 +628,9 @@ ID 可以是骨架部件 ID（如 `r1`）或图层键（`L:back`、`L:side`、`L
 对每个角色对象：
 
 ```
+0. 检查容器 header.locked / header.owner 与本角色 editLock=true：
+   带任一标记时按 protected-cvclk.md 第 1.1、5 节应用权限；
+   实现不支持受保护包时整文件拒绝，不得只检查 header.locked。
 1. name = trim(object.name || object.id || 本地化未命名)
 2. 对每个图像槽位：
      a. 若 images[slot] 存在：按 data URL 解码；校验大小与签名。
