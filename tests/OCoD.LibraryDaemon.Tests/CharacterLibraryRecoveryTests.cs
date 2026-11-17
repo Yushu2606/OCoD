@@ -119,8 +119,13 @@ public sealed class CharacterLibraryRecoveryTests
         var library = new CharacterLibrary(temporary.Path, _ => { });
         var sample = Path.Combine(AppContext.BaseDirectory, "samples", "plain-minimal.cvclk");
 
-        await Assert.ThrowsAsync<IOException>(
+        var exception = await Assert.ThrowsAnyAsync<Exception>(
             () => library.ImportCvclkAsync(sample));
+
+        // Windows reports the directory destination as access denied; Unix reports an I/O error.
+        Assert.True(
+            exception is IOException or UnauthorizedAccessException,
+            $"Unexpected commit failure: {exception}");
 
         var characterDirectories = Directory.EnumerateDirectories(
                 Path.Combine(temporary.Path, "characters"))
