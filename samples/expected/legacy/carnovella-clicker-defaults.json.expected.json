@@ -1,0 +1,50 @@
+{
+  "sample": "legacy/carnovella-clicker-defaults.json",
+  "sha256": "fb60f48e7b079b3c232cd5bddd8e9837d7fd98030b6ea1596eb4caa229e486df",
+  "kind": "legacy",
+  "format": "carnovella-clicker",
+  "characterCount": 1,
+  "characters": [
+    {
+      "id": null,
+      "name": "Legacy Defaults",
+      "author": null,
+      "images": {
+        "body": {
+          "mime": "image/png",
+          "bytes": 11413,
+          "sha256": "1661ddd8439e116122edfd1465e42571ae580bff43e4d59aa95f50ed8d2d9478"
+        },
+        "head1": {
+          "mime": "image/png",
+          "bytes": 12660,
+          "sha256": "dc9bda1acc1274e31434c497c4ba5c5e2626ba2ab0d2a1a10a44310c24e9fad6"
+        }
+      },
+      "imageSlots": [
+        "body",
+        "head1"
+      ],
+      "lines": [],
+      "idleLines": [],
+      "lineStyles": null,
+      "editLock": null,
+      "editBase": null,
+      "editSty": null,
+      "specialLineCounts": {},
+      "partSlots": [],
+      "bubbleStyle": null,
+      "bubbleStyleExtra": null,
+      "extraFields": {},
+      "sound": null,
+      "lineSoundFiles": {},
+      "lineSounds": null,
+      "partOrder": null,
+      "layers": null,
+      "rigCommon": null,
+      "petKinds": null,
+      "petImages": {},
+      "bubbleImages": {}
+    }
+  ]
+}

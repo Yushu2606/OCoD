@@ -1,0 +1,354 @@
+{
+  "sample": "cvclk/plain-full.cvclk",
+  "sha256": "93547ce83b5829d182ff317dc5820b024364c63afe1f5239c193fb9422c35dd2",
+  "kind": "cvclk",
+  "container": {
+    "format": "bug-clicker",
+    "version": 2,
+    "locked": false
+  },
+  "payload": {
+    "format": "bug-clicker",
+    "version": 1,
+    "app": "0.1.0",
+    "characterCount": 1
+  },
+  "characters": [
+    {
+      "id": "sample-full",
+      "name": "净室样本·彩绘",
+      "author": {
+        "name": "净室作者",
+        "link": "https://x.com/ocod_cleanroom",
+        "stream": "yes",
+        "edit": "no",
+        "redistribute": "no",
+        "credit": "yes",
+        "memo": "cleanroom full sample",
+        "warn": [
+          "flash",
+          "bugs"
+        ],
+        "warnEtc": "sample warning"
+      },
+      "images": {
+        "back1": {
+          "mime": "image/png",
+          "bytes": 12260,
+          "sha256": "019628a8066656de86fb1621f67280ee4eec0383f6ab124adf1eafe6f003845f"
+        },
+        "back2": {
+          "mime": "image/png",
+          "bytes": 12352,
+          "sha256": "86bec30c7eecf991a714f1a4b3bec4f542d11e65bf185db287094a8fee99f018"
+        },
+        "head1": {
+          "mime": "image/png",
+          "bytes": 12660,
+          "sha256": "dba3b6a0a1482e1dd1e5add26896c397b9fb8f6e3fa94504586e7e342b33df85"
+        },
+        "head2": {
+          "mime": "image/png",
+          "bytes": 12566,
+          "sha256": "503f9ab9a7ee9a744a7352a7e9d8e8944c1a0d48306b935a60c28d4921e1ab28"
+        },
+        "head3": {
+          "mime": "image/png",
+          "bytes": 12681,
+          "sha256": "a7bf777571f6ba44b9f7948a892b25a5edd701a4de2d1a9164efb08894b94e05"
+        },
+        "head4": {
+          "mime": "image/png",
+          "bytes": 12782,
+          "sha256": "5d558c7ff5f0396f91e429f53a7039eaa39880697528d0a634514aafea3ba2ae"
+        },
+        "head5": {
+          "mime": "image/png",
+          "bytes": 12968,
+          "sha256": "7d135fbc9b1c2ac3da72e1e6b2c53e05944281efb0d984ef0fce316f4871cf61"
+        },
+        "body": {
+          "mime": "image/png",
+          "bytes": 11413,
+          "sha256": "b29440088d69e22d9004bfa777f742ed3de195ef799b3b179d27a2729d4f47ac"
+        },
+        "body2": {
+          "mime": "image/png",
+          "bytes": 11820,
+          "sha256": "c81fd9712f4a900d133421d1474d41a6046fa7c4209cb2763df0fa7bfd6a780d"
+        },
+        "side1": {
+          "mime": "image/png",
+          "bytes": 12895,
+          "sha256": "7798a055fa8c7192f8846aafc5568b27c7892b83f73b829818263d9aba69308c"
+        },
+        "side2": {
+          "mime": "image/png",
+          "bytes": 12673,
+          "sha256": "edcab5bbf24bca95ceacd4e9e965663bc30067115cc6f348ccf9c0c6aa3feadb"
+        },
+        "ex1": {
+          "mime": "image/png",
+          "bytes": 10134,
+          "sha256": "0970f5e9bbf7e993a401d81f83daf2cb3d2feb020b5d833a26d8a3ca13a58af6"
+        },
+        "ex1p": {
+          "mime": "image/png",
+          "bytes": 10383,
+          "sha256": "98a8b742a17a5bb29386ca33b8d58aae3f2b3061c45f27240551c96b4a00da9d"
+        },
+        "ex2": {
+          "mime": "image/png",
+          "bytes": 10138,
+          "sha256": "f5828d21be6d56adfb03f48ee9122732b902ccab995bba4f096d0da82ed85084"
+        },
+        "ex2p": {
+          "mime": "image/png",
+          "bytes": 10380,
+          "sha256": "3e341bf5d42b162b2a2531d72d17471d0d482068883b1a28828eb1d0365b5203"
+        },
+        "ex3": {
+          "mime": "image/png",
+          "bytes": 10127,
+          "sha256": "29351f98b2f9c889e81749f66c7e2f2fd39effb61691123ef75021f642b55a08"
+        },
+        "ex3p": {
+          "mime": "image/png",
+          "bytes": 10372,
+          "sha256": "5c80ddd7b565b03c684aea6eb3007b9f79a2dd0b05fcd7171254b15d833dfb2e"
+        },
+        "ex4": {
+          "mime": "image/png",
+          "bytes": 10238,
+          "sha256": "3e962f7b59a443cfd0801e190c5b8b40e565acdfecf274dea0ddd5e9fc09981d"
+        },
+        "ex4p": {
+          "mime": "image/png",
+          "bytes": 10478,
+          "sha256": "cefffd7b688e65f67f61cffb23e1f30276f7d36cff29361fa2e17293e04936c0"
+        }
+      },
+      "imageSlots": [
+        "back1",
+        "back2",
+        "head1",
+        "head2",
+        "head3",
+        "head4",
+        "head5",
+        "body",
+        "body2",
+        "side1",
+        "side2",
+        "ex1",
+        "ex1p",
+        "ex2",
+        "ex2p",
+        "ex3",
+        "ex3p",
+        "ex4",
+        "ex4p"
+      ],
+      "lines": [
+        "你好，我是彩绘样本。",
+        "这条台词使用 Glow 气泡样式。",
+        "第三行\n带有换行。",
+        "这条使用内置大喊样式。",
+        "逗号,不是列,会原样保留。"
+      ],
+      "idleLines": [
+        "（发呆）……",
+        "这条自语使用内置自言自语样式。",
+        "要不要休息一下？"
+      ],
+      "lineStyles": {
+        "lines": [
+          "",
+          "u_glow",
+          "p_shout",
+          "",
+          "u_paper"
+        ],
+        "idleLines": [
+          "",
+          "p_think",
+          ""
+        ],
+        "sp_alarm_before": [
+          "p_shout",
+          ""
+        ],
+        "sp_todo_after": [
+          "",
+          "p_think"
+        ]
+      },
+      "editLock": false,
+      "editBase": null,
+      "editSty": null,
+      "specialLineCounts": {
+        "sp_alarm_before": 2,
+        "sp_alarm_after": 2,
+        "sp_pill_before": 2,
+        "sp_pill_after": 2,
+        "sp_water_before": 2,
+        "sp_water_after": 2,
+        "sp_todo_before": 2,
+        "sp_todo_after": 2
+      },
+      "partSlots": [
+        "headTop",
+        "headTop2",
+        "headTop3",
+        "ear",
+        "tail",
+        "wing",
+        "prop"
+      ],
+      "bubbleStyle": {
+        "preset": "dark",
+        "shape": "hand",
+        "appear": "pop",
+        "textFx": "wave"
+      },
+      "bubbleStyleExtra": {},
+      "extraFields": {},
+      "sound": {
+        "mime": "audio/wav",
+        "bytes": 3564,
+        "sha256": "6c1ee0471dbc58f57426f5e8cca10f372f3f5f685a3c200de9159b2c769c9894"
+      },
+      "lineSoundFiles": {
+        "lsnd_click1.wav": {
+          "mime": "audio/wav",
+          "bytes": 3564,
+          "sha256": "1b8063c932338b2b1b291a2f9507d0694f829a6d052e1b05a3561b79583f591a"
+        },
+        "lsnd_click2.wav": {
+          "mime": "audio/wav",
+          "bytes": 3564,
+          "sha256": "564616069be7a63abd6bd2219049b15c3549832026fb64ce48cef4449dc6cbf3"
+        },
+        "lsnd_idle01.wav": {
+          "mime": "audio/wav",
+          "bytes": 3564,
+          "sha256": "11f01d32cf6d367e470fb0efa4a87fbee854a6753a60d2d77d61e3a4f44992c6"
+        }
+      },
+      "lineSounds": {
+        "lines": [
+          {
+            "f": "lsnd_click1.wav",
+            "a": 0.02,
+            "b": 0.18,
+            "v": 1.2
+          },
+          null,
+          {
+            "f": "lsnd_click2.wav",
+            "a": 0,
+            "b": 0,
+            "v": 0.8
+          },
+          null,
+          null
+        ],
+        "idleLines": [
+          null,
+          {
+            "f": "lsnd_idle01.wav",
+            "a": 0.01,
+            "b": 0,
+            "v": 0.6
+          },
+          null
+        ]
+      },
+      "partOrder": [
+        "r1",
+        "r2",
+        "r3",
+        "L:back",
+        "body",
+        "L:ex1",
+        "head",
+        "L:side",
+        "L:ex2",
+        "L:ex3",
+        "L:ex4",
+        "r4"
+      ],
+      "layers": {
+        "backPos": "behindBody",
+        "backMove": "fixed",
+        "backX": 12,
+        "backY": -8,
+        "sidePos": "front",
+        "sideMove": "head",
+        "ex1Pos": "behindHead",
+        "ex1Move": "fixed",
+        "ex1X": 6,
+        "ex1Y": 4,
+        "ex4Pos": "front",
+        "ex4Move": "head",
+        "ex4X": -10,
+        "ex4Y": 6
+      },
+      "rigCommon": {
+        "mesh": 14,
+        "joint": 55,
+        "tex": 0.7,
+        "lag": 5
+      },
+      "petKinds": [
+        "heart",
+        "note",
+        "img1"
+      ],
+      "petImages": {
+        "1": {
+          "mime": "image/png",
+          "bytes": 10935,
+          "sha256": "aa7a2fa5c67a08c31b567d691cd4118dcf016815bcfed91908d3d82c9924ee9f"
+        },
+        "2": {
+          "mime": "image/png",
+          "bytes": 10444,
+          "sha256": "a71583f8104cdbe07eb8392d662736a029c72d134979a21e8bf99fff1037f249"
+        },
+        "3": {
+          "mime": "image/png",
+          "bytes": 10801,
+          "sha256": "a24d9a05f3270e611e33df70ac834403602e8f9fcc9588c26f7f6e01f52d02ae"
+        }
+      },
+      "bubbleImages": {
+        "tl": {
+          "mime": "image/png",
+          "bytes": 10452,
+          "sha256": "3d2af2e42001257239e5ae7f08ffb9eb1c614f773dcdff1946b940db0c820b31"
+        },
+        "tr": {
+          "mime": "image/png",
+          "bytes": 10632,
+          "sha256": "0918b3dbf4507038ea7a0cd6b65869cd8343230ad1bbd4bdf994009499b2e643"
+        },
+        "bl": {
+          "mime": "image/png",
+          "bytes": 10521,
+          "sha256": "3b4d4f9d48bb25851aee718aff5cc72f6a57f23b44fb6a4319e3f15ddd0fa817"
+        },
+        "br": {
+          "mime": "image/png",
+          "bytes": 10724,
+          "sha256": "59607129a09d0d0f538a94a94d404a95b2b65daa17b7bbc841dcf6209012d0a6"
+        },
+        "skin": {
+          "mime": "image/png",
+          "bytes": 15285,
+          "sha256": "46555f1b05ad413cbe61b0b8ab06f193f3a29423b9b5caff5280310b586e78ac"
+        }
+      }
+    }
+  ]
+}

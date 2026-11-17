@@ -1,0 +1,80 @@
+{
+  "sample": "cvclk/plain-minimal.cvclk",
+  "sha256": "480f573a6b867a5c9329b166e0555a8c419b10e67a94b094b7f670283d4616ee",
+  "kind": "cvclk",
+  "container": {
+    "format": "bug-clicker",
+    "version": 2,
+    "locked": false
+  },
+  "payload": {
+    "format": "bug-clicker",
+    "version": 1,
+    "app": "0.1.0",
+    "characterCount": 1
+  },
+  "characters": [
+    {
+      "id": "sample-minimal",
+      "name": "净室样本·小橙",
+      "author": {
+        "name": "OCoD Cleanroom",
+        "link": "",
+        "stream": "",
+        "edit": "",
+        "redistribute": "",
+        "credit": "",
+        "memo": "minimal sample",
+        "warn": [],
+        "warnEtc": ""
+      },
+      "images": {
+        "body": {
+          "mime": "image/png",
+          "bytes": 11413,
+          "sha256": "b29440088d69e22d9004bfa777f742ed3de195ef799b3b179d27a2729d4f47ac"
+        },
+        "head1": {
+          "mime": "image/png",
+          "bytes": 12660,
+          "sha256": "dba3b6a0a1482e1dd1e5add26896c397b9fb8f6e3fa94504586e7e342b33df85"
+        },
+        "head2": {
+          "mime": "image/png",
+          "bytes": 12566,
+          "sha256": "503f9ab9a7ee9a744a7352a7e9d8e8944c1a0d48306b935a60c28d4921e1ab28"
+        }
+      },
+      "imageSlots": [
+        "body",
+        "head1",
+        "head2"
+      ],
+      "lines": [
+        "你好，我是小橙。",
+        "这是一条点击台词。"
+      ],
+      "idleLines": [
+        "（小橙在发呆。）"
+      ],
+      "lineStyles": null,
+      "editLock": null,
+      "editBase": null,
+      "editSty": null,
+      "specialLineCounts": {},
+      "partSlots": [],
+      "bubbleStyle": null,
+      "bubbleStyleExtra": null,
+      "extraFields": {},
+      "sound": false,
+      "lineSoundFiles": {},
+      "lineSounds": null,
+      "partOrder": null,
+      "layers": null,
+      "rigCommon": null,
+      "petKinds": null,
+      "petImages": {},
+      "bubbleImages": {}
+    }
+  ]
+}

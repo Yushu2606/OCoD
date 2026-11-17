@@ -1,0 +1,108 @@
+# 样本来源与交付边界（逐文件）
+
+本文件说明 `samples/` 下每个文件的来源，以及实现方可以拿哪些。SHA-256 与当前文件一致；修改样本或文档后需重新生成本表。
+
+## 1. 交付规则
+
+| 类别 | 路径 | 实现方 | 说明 |
+| --- | --- | --- | --- |
+| 契约 | `docs/specs/**` | **可交付** | 外部契约，实现方的主要输入 |
+| 自製样本 | `samples/cvclk/`、`samples/cvpart/`、`samples/lines/`、`samples/legacy/`、`samples/protected/` | **可交付** | 由 `tools/cleanroom/samples.mjs` 独立生成 |
+| 预期摘要 | `samples/expected/**` | **可交付** | 从自製样本派生的机器可读语义 |
+| 交付清单 | `samples/SHA256SUMS.handoff` | **可交付** | 只含自製样本与 expected |
+| 文档 | `samples/README.md`、`samples/VERIFICATION.md`、`samples/protected/README.md`、`samples/protected/VERIFICATION.md`、本文件 | **可交付** | 使用说明与实机验收清单 |
+| 原作对照夹具 | `samples/verification/**`、`samples/protected/verification/**` | **仅分析方** | 原作模块级再导出结果；用于分析方对照，不流向实现方 |
+| 实机证据 | 仓外私有目录 | **仅分析方** | Windows / macOS 实机验收截图与说明；不随公开仓库提交 |
+| 分析工具 | `tools/cleanroom/**` | **仅分析方** | 生成/校验工具；实现方不需要，也不作为实现参考 |
+| 全量清单 | `samples/SHA256SUMS` | **仅分析方** | 含 `verification/` 哈希，实现方用 `.handoff` |
+| 原作解包产物 | 仓库外 `/tmp` 等 | **仅分析方** | 不进入仓库，不流向实现方 |
+
+## 2. 逐文件清单（samples/）
+
+| 文件（相对 `samples/`） | 来源 | 实现方 | SHA-256 |
+| --- | --- | --- | --- |
+| `PROVENANCE.md` | 文档 | 可交付 | （本文件，不计算自身哈希） |
+| `README.md` | 文档 | 可交付 | `15a21746c70a0ee3fc91fa26fa7c6a92908e9edd48a609eb503021655915131a` |
+| `SHA256SUMS` | 分析方全量清单 | 仅分析方 | `882bd52de2124ec3d994d9f2a6d1bd8e6524b31e0cc3f57f63ba67dccd2bb7a4` |
+| `SHA256SUMS.handoff` | 实现方交付清单 | 可交付 | `b501385338ade1b2ca228069fd5e70698bf85dd0875091e6550c877f72e5469d` |
+| `VERIFICATION.md` | 文档 | 可交付 | `44e65fbc3f490c57c1cd1e203caa351e7be6385f313e35dcfaadc5c4137ef558` |
+| `cvclk/animated-gif.cvclk` | 自製样本 | 可交付 | `0c65697241c02a0fefe857b8e59b6d0a7704008eccad838445c54bc50a3e7b4f` |
+| `cvclk/plain-full.cvclk` | 自製样本 | 可交付 | `93547ce83b5829d182ff317dc5820b024364c63afe1f5239c193fb9422c35dd2` |
+| `cvclk/plain-minimal.cvclk` | 自製样本 | 可交付 | `480f573a6b867a5c9329b166e0555a8c419b10e67a94b094b7f670283d4616ee` |
+| `cvclk/plain-multi.cvclk` | 自製样本 | 可交付 | `7aef38630783e4698012f722230b4fb99035168ffbcba1cbda9f6a189e644493` |
+| `cvclk/unknown-fields.cvclk` | 自製样本 | 可交付 | `c77bf5db4112a12f055943a18c5af19cfb03f656d7556fd3433605fc17b7b2ff` |
+| `cvpart/headtop.cvpart` | 自製样本 | 可交付 | `f32181c176af3bad9c55d2e38661e9e4a23f547bfda904368a2b880674a29c28` |
+| `cvpart/rig.cvpart` | 自製样本 | 可交付 | `1173e5b22bf46da7db9db704fb984cfe21557a097f27f0feb7197f8ddaad8307` |
+| `expected/cvclk/animated-gif.cvclk.expected.json` | 自製样本的预期摘要 | 可交付 | `1aff5b057d64601655364df7042e01549756d2ee9f8cb3e1bfa776c7c767da2f` |
+| `expected/cvclk/plain-full.cvclk.expected.json` | 自製样本的预期摘要 | 可交付 | `f024275dedac41df92eaeab0813cb8b6d58805f1e4b2b87d168463cd322c1253` |
+| `expected/cvclk/plain-minimal.cvclk.expected.json` | 自製样本的预期摘要 | 可交付 | `f5c3859d4819896ec39ea91e5baa604097f09743da5c47d43fe8c599ea2387f2` |
+| `expected/cvclk/plain-multi.cvclk.expected.json` | 自製样本的预期摘要 | 可交付 | `b074ac90b908fdf0d6e7ea623df81491d159438d0fabee52e5a4a5e73fbfbc32` |
+| `expected/cvclk/unknown-fields.cvclk.expected.json` | 自製样本的预期摘要 | 可交付 | `b232b79fd6b64828c360b04628d96bf6e42b52dc743ad362d54b647b0935919d` |
+| `expected/cvpart/headtop.cvpart.expected.json` | 自製样本的预期摘要 | 可交付 | `eac154930cdea3e2f0231f6025b1a04c168ad8cec6c65d332e764fd0227798ce` |
+| `expected/cvpart/rig.cvpart.expected.json` | 自製样本的预期摘要 | 可交付 | `7a3ba3598b1fc3c8105f84cc25982325642a385565e2bcb2227597321f38e436` |
+| `expected/legacy/carnovella-clicker-defaults.json.expected.json` | 自製样本的预期摘要 | 可交付 | `040cb98fb08032537b8a77b7845d784e5ffdbef21ddb873daec7935a14d85898` |
+| `expected/legacy/carnovella-clicker.json.expected.json` | 自製样本的预期摘要 | 可交付 | `df8b1142426804e06613137eb2f167fb79935555f1fe7f6fd23741748a151cbb` |
+| `expected/lines/click-idle.csv.expected.json` | 自製样本的预期摘要 | 可交付 | `7a2b55189121ed06074f3ac4a4efd330e4d03b3455bb143bf77bb921ce141b35` |
+| `expected/lines/click-idle.md.expected.json` | 自製样本的预期摘要 | 可交付 | `d8bac97775a2d5a6f5970e832f5bb1439fa7a0dc94db10207bb1960abad9dd4d` |
+| `expected/lines/click-idle.txt.expected.json` | 自製样本的预期摘要 | 可交付 | `b5eebd8a5fc0c8eba80871b196aaddb8829e636b6cd0daff86c33cc99709578a` |
+| `expected/lines/styles.txt.expected.json` | 自製样本的预期摘要 | 可交付 | `bd675ad3900c35caefb1f9f19b5fc93a1f6fe506c9dcfb7cfe1c7a3bd66aa5d3` |
+| `expected/lines/unsectioned.txt.expected.json` | 自製样本的预期摘要 | 可交付 | `d78c1bd726794282c4a6edbea1cad44843b592e0fb55badb906cc4fb409ee02e` |
+| `expected/protected/editlock-owner-reexport.cvclk.expected.json` | 自製样本的预期摘要 | 可交付 | `6116aff785b0f0fb0ad0f28f4a2bce55c8be8123eef248eef35840752be8a6c9` |
+| `expected/protected/editlock-recovery.cvclk.expected.json` | 自製样本的预期摘要 | 可交付 | `3f72bb4aab5ea4c072b59cb8fc5bf013953d8f8e02db0705417b0dd8526e9f07` |
+| `expected/protected/editlock.cvclk.expected.json` | 自製样本的预期摘要 | 可交付 | `dcb27cf87e3d073925fa990662b2fd2ca218a062869fd9e97dcca278ab6d9807` |
+| `expected/protected/locked-no-owner.cvclk.expected.json` | 自製样本的预期摘要 | 可交付 | `0a985fe6137ffeabd0bae53c40a8162e13cdbf1de790686129d80c34b7ee0a96` |
+| `expected/protected/locked-owner-editlock.cvclk.expected.json` | 自製样本的预期摘要 | 可交付 | `fd66583560afb4f2e419876e55d14ab34fd1b24d2e407fa2254150c3da7f9d2f` |
+| `expected/protected/locked-owner.cvclk.expected.json` | 自製样本的预期摘要 | 可交付 | `d9f8223d372676cda20a95b51d9008c2b7300d3b4e340844895aff2d6d0a4c13` |
+| `expected/protected/locked-part.cvpart.expected.json` | 自製样本的预期摘要 | 可交付 | `603ba3649bb5d42e250d273d751a724ee05be13a472fa24e88b8ec43938ccce6` |
+| `legacy/carnovella-clicker-defaults.json` | 自製样本 | 可交付 | `fb60f48e7b079b3c232cd5bddd8e9837d7fd98030b6ea1596eb4caa229e486df` |
+| `legacy/carnovella-clicker.json` | 自製样本 | 可交付 | `04d6ca7843eecbe081ca037e84262d1bdfccde69c37676305908826fb92d2f42` |
+| `lines/click-idle.csv` | 自製样本 | 可交付 | `cb8fbc5ea80d520257cac100275a031ead7d3125045a4d98f3452652f28e0b5b` |
+| `lines/click-idle.md` | 自製样本 | 可交付 | `cb8fbc5ea80d520257cac100275a031ead7d3125045a4d98f3452652f28e0b5b` |
+| `lines/click-idle.txt` | 自製样本 | 可交付 | `8aada4364515807dcfeac3f1edfffe2d04f6a40e3f4911feb9392e94016551b3` |
+| `lines/styles.txt` | 自製样本 | 可交付 | `13a1b7e48aae4a38c715be6a6904e29d7bfced3fb539bd7a2aeee425d5af4666` |
+| `lines/unsectioned.txt` | 自製样本 | 可交付 | `f5af1546aeb5f118f697ba32e14a79600ee9deee99ffe116a03aade4d1b71b9a` |
+| `protected/README.md` | 文档 | 可交付 | `1dc8beb76e17fa773e6580e5ff3b42c721e7728fb832f1f4e0616460fabba516` |
+| `protected/VERIFICATION.md` | 文档 | 可交付 | `de79409040258d498bc298fd906b573a81c46022bf081acefe58432fac319b1c` |
+| `protected/editlock-owner-reexport.cvclk` | 自製样本 | 可交付 | `472dabec93f53bb2d3019b8cd08dd66c4b28e1d110362489c3708d2c62fa76e8` |
+| `protected/editlock-recovery.cvclk` | 自製样本 | 可交付 | `dd44f11ef52275631fbd333af335ef53c596aea558d7b2f543348636b1b33474` |
+| `protected/editlock.cvclk` | 自製样本 | 可交付 | `881afa9cca543188550f0e08121e3cb1de7d0b003f8752fa099e9139dde24852` |
+| `protected/locked-no-owner.cvclk` | 自製样本 | 可交付 | `a7aef5275a07ee395b04c3be76f88a377ce7762d624488b873e7c8e9062aafaa` |
+| `protected/locked-owner-editlock.cvclk` | 自製样本 | 可交付 | `961f4e76c7aee693291b82e758393c9a4dc05e9dae1fbfccae2df572313cda86` |
+| `protected/locked-owner.cvclk` | 自製样本 | 可交付 | `01089a1b1c537f692f01a96930b718a7d02b3096a9615bacd4838436bfeb3d89` |
+| `protected/locked-part.cvpart` | 自製样本 | 可交付 | `290180a0ba2f64306cc877f25fe76346474a78cce651f100c332474a3dc06c16` |
+| `verification/README.md` | 对照夹具说明 | 仅分析方 | `6e04854d294354169ba409e4fc37751112af250d00b7b2545e68ef16ad01a14c` |
+| `verification/mac-1.4.6/animated-gif.cvclk` | 原作模块级再导出对照夹具 | 仅分析方 | `4937127107c27adb3300b96ced76230a0dc7b4621015c54608b88ada3ee21659` |
+| `verification/mac-1.4.6/headtop.cvpart` | 原作模块级再导出对照夹具 | 仅分析方 | `9752a3fb06bd4c294e91964d9ab7df70734203d121a1878386e67b5b65601fd3` |
+| `verification/mac-1.4.6/plain-full.cvclk` | 原作模块级再导出对照夹具 | 仅分析方 | `4e614e55c5d8aa60022a3ec0614738a74c38d4a7458dc498ce28b7f79292d581` |
+| `verification/mac-1.4.6/plain-minimal.cvclk` | 原作模块级再导出对照夹具 | 仅分析方 | `0d7faeeed29fac0a908d50cff6ba91aa3c63d51edcbee9a621fbd372bc6857c8` |
+| `verification/mac-1.4.6/plain-multi.cvclk` | 原作模块级再导出对照夹具 | 仅分析方 | `0cf291e78b89f051918d2aace0bc4f7a9dd06b19b6a3def4457727077482fe2c` |
+| `verification/mac-1.4.6/rig.cvpart` | 原作模块级再导出对照夹具 | 仅分析方 | `8d0c72544eb53dad37bbdd062a4ef7e57d6243ca31ef019546a0b0bb369933b5` |
+| `verification/win-1.19.6/animated-gif.cvclk` | 原作模块级再导出对照夹具 | 仅分析方 | `811a1b8357569b24db672b55b79a912dee4ecb40f4b9f57272abc4b500123dbb` |
+| `verification/win-1.19.6/headtop.cvpart` | 原作模块级再导出对照夹具 | 仅分析方 | `fcfea2ff1d1a8d2c0b7d9024191c8de02403789b0273dafe6db35079a1c7ba54` |
+| `verification/win-1.19.6/plain-full.cvclk` | 原作模块级再导出对照夹具 | 仅分析方 | `30710b98f9c1b78ef07497ea8ffaeb625dbd0d32d9feb2e81b753d60ae79ff67` |
+| `verification/win-1.19.6/plain-minimal.cvclk` | 原作模块级再导出对照夹具 | 仅分析方 | `68c95ef62389e0a1f278c90983be2fafd8e0eb2395b774cfee08bc92c1720b47` |
+| `verification/win-1.19.6/plain-multi.cvclk` | 原作模块级再导出对照夹具 | 仅分析方 | `4baaead91e3897994b5898ed22c1811d577d2936adfde7f0ee75c3a7a7459314` |
+| `verification/win-1.19.6/rig.cvpart` | 原作模块级再导出对照夹具 | 仅分析方 | `89a45733ed12afa3413441f9d80e52afc06bbcaa8e6d218637055edb44041fcb` |
+
+## 3. 非样本目录
+
+| 路径 | 来源 | 实现方 | 说明 |
+| --- | --- | --- | --- |
+| `docs/specs/README.md` | 契约文档 | 可交付 | |
+| `docs/specs/author-and-bubble-reference.md` | 契约文档 | 可交付 | |
+| `docs/specs/carnovella-clicker-json.md` | 契约文档 | 可交付 | |
+| `docs/specs/container-v2.md` | 契约文档 | 可交付 | |
+| `docs/specs/cvclk-v1.md` | 契约文档 | 可交付 | |
+| `docs/specs/cvpart-v1.md` | 契约文档 | 可交付 | |
+| `docs/specs/lines-files.md` | 契约文档 | 可交付 | |
+| `docs/specs/protected-cvclk.md` | 契约文档 | 可交付 | |
+| `tools/cleanroom/samples.mjs` | 分析方工具 | 仅分析方 | 生成/校验/查看；不读取原作 |
+
+## 4. 备注
+
+- 实机证据已移到仓外私有目录（分析方本地保留），不随公开仓库提交，也不列入本表或 `SHA256SUMS`。
+
+- `SHA256SUMS.handoff` 是给实现方的哈希清单；`SHA256SUMS` 是分析方全量清单。
+- 自製样本的生成器不读取原作、不联网；样本字节可离线重建（`samples/verification/` 除外，它由原作模块生成）。
+- 原作 ASAR 的解包内容只留在分析方工作目录，不提交到本仓库。
+- 若实现方需要额外对照数据，由分析方从自製样本或规格中补充，不直接转交 `verification/`。

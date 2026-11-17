@@ -1,0 +1,124 @@
+{
+  "sample": "cvclk/unknown-fields.cvclk",
+  "sha256": "c77bf5db4112a12f055943a18c5af19cfb03f656d7556fd3433605fc17b7b2ff",
+  "kind": "cvclk",
+  "container": {
+    "format": "bug-clicker",
+    "version": 2,
+    "locked": false
+  },
+  "payload": {
+    "format": "bug-clicker",
+    "version": 1,
+    "app": "0.1.0",
+    "characterCount": 1
+  },
+  "payloadExtra": {
+    "keep": true
+  },
+  "characters": [
+    {
+      "id": "sample-unknown",
+      "name": "净室样本·未知字段",
+      "author": {
+        "name": "OCoD Cleanroom",
+        "link": "",
+        "stream": "",
+        "edit": "",
+        "redistribute": "",
+        "credit": "",
+        "memo": "unknown-field sample",
+        "warn": [],
+        "warnEtc": "",
+        "x_future_author": "keep-author"
+      },
+      "images": {
+        "body": {
+          "mime": "image/png",
+          "bytes": 11413,
+          "sha256": "b29440088d69e22d9004bfa777f742ed3de195ef799b3b179d27a2729d4f47ac"
+        },
+        "head1": {
+          "mime": "image/png",
+          "bytes": 12660,
+          "sha256": "dba3b6a0a1482e1dd1e5add26896c397b9fb8f6e3fa94504586e7e342b33df85"
+        },
+        "head2": {
+          "mime": "image/png",
+          "bytes": 12566,
+          "sha256": "503f9ab9a7ee9a744a7352a7e9d8e8944c1a0d48306b935a60c28d4921e1ab28"
+        },
+        "xFuture": {
+          "mime": "image/png",
+          "bytes": 11413,
+          "sha256": "b29440088d69e22d9004bfa777f742ed3de195ef799b3b179d27a2729d4f47ac"
+        }
+      },
+      "imageSlots": [
+        "body",
+        "head1",
+        "head2",
+        "xFuture"
+      ],
+      "lines": [
+        "未知字段不应阻止导入。",
+        "再导出时应保留未知字段。"
+      ],
+      "idleLines": [
+        "（未知字段样本在发呆。）"
+      ],
+      "lineStyles": {
+        "lines": [
+          "",
+          ""
+        ],
+        "x_future_lines": [
+          "",
+          ""
+        ]
+      },
+      "editLock": null,
+      "editBase": null,
+      "editSty": null,
+      "specialLineCounts": {
+        "sp_g1_before": 1
+      },
+      "partSlots": [],
+      "bubbleStyle": {
+        "preset": "dark"
+      },
+      "bubbleStyleExtra": {
+        "x_future_bubble": 42
+      },
+      "extraFields": {
+        "x_future_field": "keep-character",
+        "x_future_object": {
+          "nested": [
+            1,
+            2,
+            3
+          ]
+        },
+        "groupNames": {
+          "g1": "Future Group"
+        },
+        "sp_g1_before": [
+          "future special line"
+        ]
+      },
+      "sound": false,
+      "lineSoundFiles": {},
+      "lineSounds": null,
+      "partOrder": [
+        "body",
+        "head",
+        "xFutureLayer"
+      ],
+      "layers": null,
+      "rigCommon": null,
+      "petKinds": null,
+      "petImages": {},
+      "bubbleImages": {}
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "sample": "protected/editlock.cvclk",
+  "sha256": "881afa9cca543188550f0e08121e3cb1de7d0b003f8752fa099e9139dde24852",
+  "kind": "cvclk",
+  "container": {
+    "format": "bug-clicker",
+    "version": 2,
+    "locked": false
+  },
+  "payload": {
+    "format": "bug-clicker",
+    "version": 1,
+    "app": "0.1.0",
+    "characterCount": 1
+  },
+  "characters": [
+    {
+      "id": "sample-editlock",
+      "name": "净室样本·锁定原文",
+      "author": {
+        "name": "净室作者",
+        "link": "https://x.com/ocod_cleanroom",
+        "stream": "yes",
+        "edit": "no",
+        "redistribute": "no",
+        "credit": "yes",
+        "memo": "protected cleanroom sample",
+        "warn": [],
+        "warnEtc": ""
+      },
+      "images": {
+        "body": {
+          "mime": "image/png",
+          "bytes": 11413,
+          "sha256": "b29440088d69e22d9004bfa777f742ed3de195ef799b3b179d27a2729d4f47ac"
+        },
+        "head1": {
+          "mime": "image/png",
+          "bytes": 12660,
+          "sha256": "dba3b6a0a1482e1dd1e5add26896c397b9fb8f6e3fa94504586e7e342b33df85"
+        },
+        "head2": {
+          "mime": "image/png",
+          "bytes": 12566,
+          "sha256": "503f9ab9a7ee9a744a7352a7e9d8e8944c1a0d48306b935a60c28d4921e1ab28"
+        }
+      },
+      "imageSlots": [
+        "body",
+        "head1",
+        "head2"
+      ],
+      "lines": [
+        "原始点击一。",
+        "原始点击二。",
+        "新增点击三。"
+      ],
+      "idleLines": [
+        "原始自语一。",
+        "新增自语二。"
+      ],
+      "lineStyles": {
+        "lines": [
+          "p_shout",
+          "",
+          ""
+        ],
+        "idleLines": [
+          "",
+          ""
+        ]
+      },
+      "editLock": true,
+      "editBase": {
+        "lines": [
+          "原始点击一。",
+          "原始点击二。"
+        ],
+        "idleLines": [
+          "原始自语一。"
+        ]
+      },
+      "editSty": {
+        "lines": [
+          "p_shout",
+          "",
+          ""
+        ],
+        "idleLines": [
+          "",
+          ""
+        ]
+      },
+      "specialLineCounts": {},
+      "partSlots": [],
+      "bubbleStyle": null,
+      "bubbleStyleExtra": null,
+      "extraFields": {},
+      "sound": false,
+      "lineSoundFiles": {},
+      "lineSounds": null,
+      "partOrder": null,
+      "layers": null,
+      "rigCommon": null,
+      "petKinds": null,
+      "petImages": {},
+      "bubbleImages": {}
+    }
+  ]
+}

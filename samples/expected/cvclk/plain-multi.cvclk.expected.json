@@ -1,0 +1,185 @@
+{
+  "sample": "cvclk/plain-multi.cvclk",
+  "sha256": "7aef38630783e4698012f722230b4fb99035168ffbcba1cbda9f6a189e644493",
+  "kind": "cvclk",
+  "container": {
+    "format": "bug-clicker",
+    "version": 2,
+    "locked": false
+  },
+  "payload": {
+    "format": "bug-clicker",
+    "version": 1,
+    "app": "0.1.0",
+    "characterCount": 3
+  },
+  "characters": [
+    {
+      "id": "sample-lime",
+      "name": "Cleanroom Sample Lime",
+      "author": {
+        "name": "Cleanroom",
+        "link": "",
+        "stream": "",
+        "edit": "",
+        "redistribute": "",
+        "credit": "",
+        "memo": "English sample",
+        "warn": [],
+        "warnEtc": ""
+      },
+      "images": {
+        "body": {
+          "mime": "image/png",
+          "bytes": 11413,
+          "sha256": "1661ddd8439e116122edfd1465e42571ae580bff43e4d59aa95f50ed8d2d9478"
+        },
+        "head1": {
+          "mime": "image/png",
+          "bytes": 12660,
+          "sha256": "dc9bda1acc1274e31434c497c4ba5c5e2626ba2ab0d2a1a10a44310c24e9fad6"
+        },
+        "head2": {
+          "mime": "image/png",
+          "bytes": 12566,
+          "sha256": "c5bf3be8a1d337036546368e96a98c675f6b1ca024b940f86d295cce9bb7d4f0"
+        }
+      },
+      "imageSlots": [
+        "body",
+        "head1",
+        "head2"
+      ],
+      "lines": [
+        "Hello from the lime sample.",
+        "This is the second click line."
+      ],
+      "idleLines": [
+        "The lime sample is idling."
+      ],
+      "lineStyles": null,
+      "editLock": null,
+      "editBase": null,
+      "editSty": null,
+      "specialLineCounts": {},
+      "partSlots": [],
+      "bubbleStyle": null,
+      "bubbleStyleExtra": null,
+      "extraFields": {},
+      "sound": false,
+      "lineSoundFiles": {},
+      "lineSounds": null,
+      "partOrder": null,
+      "layers": null,
+      "rigCommon": null,
+      "petKinds": null,
+      "petImages": {},
+      "bubbleImages": {}
+    },
+    {
+      "id": "sample-jp",
+      "name": "クリーンルーム見本",
+      "author": {
+        "name": "Cleanroom",
+        "link": "",
+        "stream": "",
+        "edit": "",
+        "redistribute": "",
+        "credit": "",
+        "memo": "",
+        "warn": [],
+        "warnEtc": ""
+      },
+      "images": {
+        "body": {
+          "mime": "image/png",
+          "bytes": 11413,
+          "sha256": "a74590e64f2d6e902a77585b218bf51690848205a3f2ec8dd5d5a725ff8944d8"
+        },
+        "head1": {
+          "mime": "image/png",
+          "bytes": 12660,
+          "sha256": "d1b762d81a1bcf3668b06aa838941e28486e2402d00adfc311babfaf3a2b7ce4"
+        }
+      },
+      "imageSlots": [
+        "body",
+        "head1"
+      ],
+      "lines": [
+        "クリーンルーム見本です。",
+        "2 行目のクリック台詞です。"
+      ],
+      "idleLines": [
+        "ひとりごとです。"
+      ],
+      "lineStyles": null,
+      "editLock": null,
+      "editBase": null,
+      "editSty": null,
+      "specialLineCounts": {},
+      "partSlots": [],
+      "bubbleStyle": null,
+      "bubbleStyleExtra": null,
+      "extraFields": {},
+      "sound": false,
+      "lineSoundFiles": {},
+      "lineSounds": null,
+      "partOrder": null,
+      "layers": null,
+      "rigCommon": null,
+      "petKinds": null,
+      "petImages": {},
+      "bubbleImages": {}
+    },
+    {
+      "id": "unnamed-sample-orange",
+      "name": null,
+      "author": null,
+      "images": {
+        "body": {
+          "mime": "image/png",
+          "bytes": 11413,
+          "sha256": "b29440088d69e22d9004bfa777f742ed3de195ef799b3b179d27a2729d4f47ac"
+        },
+        "head1": {
+          "mime": "image/png",
+          "bytes": 12660,
+          "sha256": "dba3b6a0a1482e1dd1e5add26896c397b9fb8f6e3fa94504586e7e342b33df85"
+        },
+        "head2": {
+          "mime": "image/png",
+          "bytes": 12566,
+          "sha256": "503f9ab9a7ee9a744a7352a7e9d8e8944c1a0d48306b935a60c28d4921e1ab28"
+        }
+      },
+      "imageSlots": [
+        "body",
+        "head1",
+        "head2"
+      ],
+      "lines": [
+        "未命名角色也能导入。"
+      ],
+      "idleLines": [],
+      "lineStyles": null,
+      "editLock": null,
+      "editBase": null,
+      "editSty": null,
+      "specialLineCounts": {},
+      "partSlots": [],
+      "bubbleStyle": null,
+      "bubbleStyleExtra": null,
+      "extraFields": {},
+      "sound": false,
+      "lineSoundFiles": {},
+      "lineSounds": null,
+      "partOrder": null,
+      "layers": null,
+      "rigCommon": null,
+      "petKinds": null,
+      "petImages": {},
+      "bubbleImages": {}
+    }
+  ]
+}

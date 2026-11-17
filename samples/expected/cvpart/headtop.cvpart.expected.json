@@ -1,0 +1,144 @@
+{
+  "sample": "cvpart/headtop.cvpart",
+  "sha256": "f32181c176af3bad9c55d2e38661e9e4a23f547bfda904368a2b880674a29c28",
+  "kind": "cvpart",
+  "container": {
+    "format": "bug-clicker-part",
+    "version": 1,
+    "locked": false
+  },
+  "payload": {
+    "format": "bug-clicker-part",
+    "version": 1,
+    "from": "净室样本·彩绘",
+    "partCount": 3
+  },
+  "parts": [
+    {
+      "slot": "headTop",
+      "name": "蝴蝶结",
+      "rigId": null,
+      "on": null,
+      "at": null,
+      "settings": {
+        "On": true,
+        "Size": 120,
+        "X": 0,
+        "Y": -10,
+        "Hop": 20,
+        "Soft": 40,
+        "Squish": 40,
+        "Every": 1800,
+        "Press": true,
+        "When": "up",
+        "Beat": false,
+        "Type": false,
+        "ShOn": true,
+        "ShShape": "soft",
+        "ShColor": "#552200",
+        "ShAlpha": 0.35,
+        "ShSize": 110,
+        "ShBlur": 4,
+        "ShY": 2,
+        "ShFloat": true
+      },
+      "image": {
+        "mime": "image/png",
+        "bytes": 10597,
+        "sha256": "6109f22dab08da9ee2a215b36b18b9226e96f518d640a226ae19d1623667032c"
+      },
+      "shadowImage": {
+        "mime": "image/png",
+        "bytes": 10513,
+        "sha256": "9a3f637a0669a8e2bb5c581b1a6c4a12cface6730202218589c41edd0c469355"
+      },
+      "blinkImage": {
+        "mime": "image/png",
+        "bytes": 11368,
+        "sha256": "19a6d813345b9b21ad3cecea80afc6a82acca5fce562d41b5612dfb4d54e731a"
+      }
+    },
+    {
+      "slot": "headTop2",
+      "name": "光环",
+      "rigId": null,
+      "on": null,
+      "at": null,
+      "settings": {
+        "On": true,
+        "Size": 90,
+        "X": 0,
+        "Y": -30,
+        "Hop": 14,
+        "Soft": 30,
+        "Squish": 35,
+        "Every": 2200,
+        "Press": true,
+        "When": "down",
+        "Beat": true,
+        "Type": false,
+        "ShOn": true,
+        "ShShape": "dot",
+        "ShColor": "#aa8800",
+        "ShAlpha": 0.25,
+        "ShSize": 100,
+        "ShBlur": 3,
+        "ShY": 0,
+        "ShFloat": true
+      },
+      "image": {
+        "mime": "image/png",
+        "bytes": 12986,
+        "sha256": "2a6f7debbfac151e201dd75265c7cbd50c709fb0aa32b4d2073f26ace357966a"
+      },
+      "shadowImage": null,
+      "blinkImage": null
+    },
+    {
+      "slot": "headTop3",
+      "name": "小旗",
+      "rigId": null,
+      "on": null,
+      "at": null,
+      "settings": {
+        "On": true,
+        "Size": 80,
+        "X": 20,
+        "Y": -20,
+        "Hop": 8,
+        "Soft": 20,
+        "Squish": 20,
+        "Every": 1200,
+        "Press": true,
+        "When": "down",
+        "Beat": true,
+        "Type": false,
+        "ShOn": true,
+        "ShShape": "png",
+        "ShColor": "#000000",
+        "ShAlpha": 0.3,
+        "ShSize": 100,
+        "ShBlur": 3,
+        "ShY": 0,
+        "ShFloat": true
+      },
+      "image": {
+        "mime": "image/png",
+        "bytes": 11426,
+        "sha256": "d72e00d582a4eb212b63327ead35a5e4875cdb9d989d00f72c9afc9509776007"
+      },
+      "shadowImage": null,
+      "blinkImage": {
+        "mime": "image/png",
+        "bytes": 12017,
+        "sha256": "c69903b498b6e37b1555457eb722b942f77e644b47c3e7da729d5fd2b2fe93fc"
+      }
+    }
+  ],
+  "rigCommon": {
+    "mesh": 11,
+    "joint": 60,
+    "tex": 0.6,
+    "lag": 0
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "sample": "cvclk/animated-gif.cvclk",
+  "sha256": "0c65697241c02a0fefe857b8e59b6d0a7704008eccad838445c54bc50a3e7b4f",
+  "kind": "cvclk",
+  "container": {
+    "format": "bug-clicker",
+    "version": 2,
+    "locked": false
+  },
+  "payload": {
+    "format": "bug-clicker",
+    "version": 1,
+    "app": "0.1.0",
+    "characterCount": 1
+  },
+  "characters": [
+    {
+      "id": "sample-gif",
+      "name": "净室样本·动图",
+      "author": {
+        "name": "OCoD Cleanroom",
+        "link": "",
+        "stream": "",
+        "edit": "",
+        "redistribute": "",
+        "credit": "",
+        "memo": "animated GIF sample",
+        "warn": [],
+        "warnEtc": ""
+      },
+      "images": {
+        "body": {
+          "mime": "image/png",
+          "bytes": 11413,
+          "sha256": "1661ddd8439e116122edfd1465e42571ae580bff43e4d59aa95f50ed8d2d9478"
+        },
+        "head1": {
+          "mime": "image/png",
+          "bytes": 12660,
+          "sha256": "dc9bda1acc1274e31434c497c4ba5c5e2626ba2ab0d2a1a10a44310c24e9fad6"
+        },
+        "head2": {
+          "mime": "image/png",
+          "bytes": 12566,
+          "sha256": "c5bf3be8a1d337036546368e96a98c675f6b1ca024b940f86d295cce9bb7d4f0"
+        },
+        "head3": {
+          "mime": "image/gif",
+          "bytes": 13967,
+          "sha256": "6fcce39f0cdd03e68ab94b1b6bd17c58d27a3d336d3f7aef6565d02aaeb1ffc1"
+        }
+      },
+      "imageSlots": [
+        "body",
+        "head1",
+        "head2",
+        "head3"
+      ],
+      "lines": [
+        "这是一张会眨眼的动图。",
+        "head3 是 GIF 动图。"
+      ],
+      "idleLines": [
+        "（动图样本在眨眼。）"
+      ],
+      "lineStyles": null,
+      "editLock": null,
+      "editBase": null,
+      "editSty": null,
+      "specialLineCounts": {},
+      "partSlots": [],
+      "bubbleStyle": null,
+      "bubbleStyleExtra": null,
+      "extraFields": {},
+      "sound": false,
+      "lineSoundFiles": {},
+      "lineSounds": null,
+      "partOrder": null,
+      "layers": null,
+      "rigCommon": null,
+      "petKinds": null,
+      "petImages": {},
+      "bubbleImages": {}
+    }
+  ]
+}

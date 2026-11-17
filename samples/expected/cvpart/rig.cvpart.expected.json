@@ -1,0 +1,235 @@
+{
+  "sample": "cvpart/rig.cvpart",
+  "sha256": "1173e5b22bf46da7db9db704fb984cfe21557a097f27f0feb7197f8ddaad8307",
+  "kind": "cvpart",
+  "container": {
+    "format": "bug-clicker-part",
+    "version": 1,
+    "locked": false
+  },
+  "payload": {
+    "format": "bug-clicker-part",
+    "version": 1,
+    "from": "净室样本·彩绘",
+    "partCount": 4
+  },
+  "parts": [
+    {
+      "slot": "ear",
+      "name": "",
+      "rigId": "r1",
+      "on": true,
+      "at": "mid",
+      "settings": {
+        "off": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "mirror": true,
+        "tilt": 0,
+        "bones": [
+          0.3333333333333333,
+          0.3333333333333333,
+          0.3333333333333333
+        ],
+        "range": 35,
+        "amp": 25,
+        "period": 1.2,
+        "soft": 55,
+        "bounce": 70,
+        "kick": 94,
+        "wobble": 49,
+        "opp": true,
+        "scale": 100,
+        "fade": 0,
+        "when": "down",
+        "onDrag": true,
+        "onBeat": true,
+        "beatSway": false,
+        "onKey": true,
+        "name": "猫耳",
+        "onPet": "none",
+        "petAmt": 50,
+        "stiff": 0,
+        "drop": true,
+        "ant": false,
+        "split": false,
+        "tiltL": null,
+        "pinAt": null,
+        "tipAt": null,
+        "pinAtL": null,
+        "tipAtL": null
+      },
+      "image": {
+        "mime": "image/png",
+        "bytes": 12513,
+        "sha256": "0771a9ee7c3dd6466b54a05430ec929f2baf500b0900990b53bc305424b66c00"
+      },
+      "shadowImage": null,
+      "blinkImage": null
+    },
+    {
+      "slot": "tail",
+      "name": "",
+      "rigId": "r2",
+      "on": true,
+      "at": "back",
+      "settings": {
+        "name": "尾巴",
+        "root": [
+          400,
+          650
+        ],
+        "dir": 20,
+        "curve": -30,
+        "bones": [
+          0.08333333333333333,
+          0.08333333333333333,
+          0.08333333333333333,
+          0.08333333333333333,
+          0.08333333333333333,
+          0.08333333333333333,
+          0.08333333333333333,
+          0.08333333333333333,
+          0.08333333333333333,
+          0.08333333333333333,
+          0.08333333333333333,
+          0.08333333333333333
+        ],
+        "range": 90,
+        "amp": 90,
+        "period": 2.7,
+        "soft": 88,
+        "bounce": 69,
+        "kick": 67,
+        "wobble": 55,
+        "scale": 100,
+        "fade": 0,
+        "flip": false,
+        "fur": "R",
+        "when": "down",
+        "onBeat": true,
+        "head": false,
+        "rel": null,
+        "rev": false,
+        "vtip": false,
+        "onPet": "wag",
+        "petAmt": 50,
+        "pinAt": null,
+        "tipAt": null
+      },
+      "image": {
+        "mime": "image/png",
+        "bytes": 11343,
+        "sha256": "fb44117faced215c21cd36974c2c534bf602d7b19aa31293a5c3790a69d1f106"
+      },
+      "shadowImage": null,
+      "blinkImage": null
+    },
+    {
+      "slot": "wing",
+      "name": "",
+      "rigId": "r3",
+      "on": true,
+      "at": "back",
+      "settings": {
+        "name": "翅膀",
+        "style": "bat",
+        "x": 0,
+        "y": -40,
+        "tilt": -19,
+        "bones": [
+          0.16666666666666666,
+          0.16666666666666666,
+          0.16666666666666666,
+          0.16666666666666666,
+          0.16666666666666666,
+          0.16666666666666666
+        ],
+        "range": 30,
+        "amp": 64,
+        "period": 1.4,
+        "down": 50,
+        "soft": 41,
+        "bounce": 79,
+        "depth": 76,
+        "flaps": 2,
+        "flapT": 0.45,
+        "scale": 100,
+        "fade": 0,
+        "when": "down",
+        "split": false,
+        "sym": true,
+        "xL": null,
+        "yL": null,
+        "tiltL": null,
+        "pinAt": null,
+        "tipAt": null,
+        "pinAtL": null,
+        "tipAtL": null
+      },
+      "image": {
+        "mime": "image/png",
+        "bytes": 11728,
+        "sha256": "3c4bb88a5b8d547fa712e72bd914a292e59a3cb380ae80597c39c171f4d22933"
+      },
+      "shadowImage": null,
+      "blinkImage": null
+    },
+    {
+      "slot": "prop",
+      "name": "",
+      "rigId": "r4",
+      "on": false,
+      "at": "front",
+      "settings": {
+        "name": "小球",
+        "anim": "hop",
+        "pos": [
+          0,
+          0
+        ],
+        "scale": 100,
+        "when": "down",
+        "follow": "none",
+        "hopH": 80,
+        "hopEvery": 2,
+        "hopSquash": 30,
+        "flRx": 40,
+        "flRy": 24,
+        "flPeriod": 4,
+        "shAmp": 8,
+        "shDeg": 6,
+        "shDur": 0.6,
+        "shEvery": 3,
+        "rlX1": -120,
+        "rlX2": 120,
+        "rlSpeed": 150,
+        "rlPause": 0.8,
+        "pkDx": 90,
+        "pkDy": -70,
+        "pkWait": 2.2,
+        "pkStay": 1.2
+      },
+      "image": {
+        "mime": "image/png",
+        "bytes": 10682,
+        "sha256": "e7271856f7f0ad6317e007044c4821dbd063f476b45a0b2fc4d82fead747944b"
+      },
+      "shadowImage": null,
+      "blinkImage": null
+    }
+  ],
+  "rigCommon": {
+    "mesh": 14,
+    "joint": 55,
+    "tex": 0.7,
+    "lag": 5
+  }
+}

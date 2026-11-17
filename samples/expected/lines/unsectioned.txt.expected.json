@@ -1,0 +1,17 @@
+{
+  "sample": "lines/unsectioned.txt",
+  "sha256": "f5af1546aeb5f118f697ba32e14a79600ee9deee99ffe116a03aade4d1b71b9a",
+  "kind": "lines",
+  "sections": false,
+  "lines": [],
+  "linesRaw": [],
+  "lineStyles": [],
+  "idleLines": [],
+  "idleLinesRaw": [],
+  "idleStyles": [],
+  "plain": [
+    "第一句",
+    "第二句",
+    "第三句"
+  ]
+}

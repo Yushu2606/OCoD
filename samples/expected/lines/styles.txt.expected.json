@@ -1,0 +1,34 @@
+{
+  "sample": "lines/styles.txt",
+  "sha256": "13a1b7e48aae4a38c715be6a6904e29d7bfced3fb539bd7a2aeee425d5af4666",
+  "kind": "lines",
+  "sections": true,
+  "lines": [
+    "内置大喊",
+    "{외침}",
+    "未知样式",
+    "{메모} 备忘词不是样式",
+    "数字不是样式",
+    "普通台词"
+  ],
+  "linesRaw": [
+    "{외침} 内置大喊",
+    "{외침}",
+    "{unknown} 未知样式",
+    "{메모} 备忘词不是样式",
+    "{123} 数字不是样式",
+    "普通台词"
+  ],
+  "lineStyles": [
+    "외침",
+    "",
+    "unknown",
+    "",
+    "123",
+    ""
+  ],
+  "idleLines": [],
+  "idleLinesRaw": [],
+  "idleStyles": [],
+  "plain": []
+}

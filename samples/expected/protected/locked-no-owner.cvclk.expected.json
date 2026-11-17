@@ -1,0 +1,80 @@
+{
+  "sample": "protected/locked-no-owner.cvclk",
+  "sha256": "a7aef5275a07ee395b04c3be76f88a377ce7762d624488b873e7c8e9062aafaa",
+  "kind": "cvclk",
+  "container": {
+    "format": "bug-clicker",
+    "version": 2,
+    "locked": true
+  },
+  "payload": {
+    "format": "bug-clicker",
+    "version": 1,
+    "app": "0.1.0",
+    "characterCount": 1
+  },
+  "characters": [
+    {
+      "id": "sample-locked",
+      "name": "净室样本·不可再导出",
+      "author": {
+        "name": "净室作者",
+        "link": "https://x.com/ocod_cleanroom",
+        "stream": "yes",
+        "edit": "no",
+        "redistribute": "no",
+        "credit": "yes",
+        "memo": "protected cleanroom sample",
+        "warn": [],
+        "warnEtc": ""
+      },
+      "images": {
+        "body": {
+          "mime": "image/png",
+          "bytes": 11413,
+          "sha256": "b29440088d69e22d9004bfa777f742ed3de195ef799b3b179d27a2729d4f47ac"
+        },
+        "head1": {
+          "mime": "image/png",
+          "bytes": 12660,
+          "sha256": "dba3b6a0a1482e1dd1e5add26896c397b9fb8f6e3fa94504586e7e342b33df85"
+        },
+        "head2": {
+          "mime": "image/png",
+          "bytes": 12566,
+          "sha256": "503f9ab9a7ee9a744a7352a7e9d8e8944c1a0d48306b935a60c28d4921e1ab28"
+        }
+      },
+      "imageSlots": [
+        "body",
+        "head1",
+        "head2"
+      ],
+      "lines": [
+        "这个角色不能再导出。",
+        "但仍可正常使用。"
+      ],
+      "idleLines": [
+        "（不可再导出样本在发呆。）"
+      ],
+      "lineStyles": null,
+      "editLock": null,
+      "editBase": null,
+      "editSty": null,
+      "specialLineCounts": {},
+      "partSlots": [],
+      "bubbleStyle": null,
+      "bubbleStyleExtra": null,
+      "extraFields": {},
+      "sound": false,
+      "lineSoundFiles": {},
+      "lineSounds": null,
+      "partOrder": null,
+      "layers": null,
+      "rigCommon": null,
+      "petKinds": null,
+      "petImages": {},
+      "bubbleImages": {}
+    }
+  ]
+}
