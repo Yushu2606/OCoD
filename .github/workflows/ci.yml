@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Restore
+        run: dotnet restore OCoD.slnx
+      - name: Build
+        run: dotnet build OCoD.slnx -c Release --no-restore
+      - name: Test
+        run: dotnet test OCoD.slnx -c Release --no-build
+      - name: Verify clean-room samples
+        run: node tools/cleanroom/samples.mjs verify
+
+  aot-publish:
+    name: Native AOT publish (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            rid: osx-arm64
+          - os: windows-latest
+            rid: win-x64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish AOT components
+        shell: bash
+        run: |
+          for p in OCoD.Launcher OCoD.GlobalDaemon OCoD.LibraryDaemon OCoD.CharacterHost; do
+            dotnet publish "src/$p/$p.csproj" -c Release -r "${{ matrix.rid }}" -o "artifacts/${{ matrix.rid }}" --nologo
+          done
