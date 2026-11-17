@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsAotCompatible>true</IsAotCompatible>
+    <PublishAot>true</PublishAot>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <RootNamespace>OCoD.CharacterHost</RootNamespace>
+    <AssemblyName>OCoD.CharacterHost</AssemblyName>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Markup.Declarative" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../OCoD.Desktop/OCoD.Desktop.csproj" />
+    <ProjectReference Include="../OCoD.LibraryClient/OCoD.LibraryClient.csproj" />
+    <ProjectReference Include="../OCoD.Localization/OCoD.Localization.csproj" />
+    <ProjectReference Include="../OCoD.Protocol/OCoD.Protocol.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Lets the trimmer keep the Fluent theme's compiled XAML resources. -->
+    <TrimmableAssembly Include="Avalonia.Themes.Fluent" />
+  </ItemGroup>
+
+</Project>
