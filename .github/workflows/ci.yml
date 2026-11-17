@@ -4,15 +4,25 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-test:
-    name: Build & test
-    runs-on: ubuntu-latest
+    name: Build and test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -30,22 +40,34 @@ jobs:
       - name: Verify clean-room samples
         run: node tools/cleanroom/samples.mjs verify
 
-  aot-publish:
-    name: Native AOT publish (${{ matrix.rid }})
+  aot:
+    name: NativeAOT (${{ matrix.rid }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    continue-on-error: ${{ !matrix.blocking }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: macos-13
-            rid: osx-x64
-          - os: windows-latest
-            rid: win-x64
+          - rid: win-x64
+            os: windows-latest
+            blocking: true
+          - rid: osx-x64
+            os: macos-15
+            blocking: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      - name: Ensure vswhere on PATH
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer"
+          if (Test-Path $installer) {
+            $installer | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
       - name: Publish AOT components
         shell: bash
         run: |
