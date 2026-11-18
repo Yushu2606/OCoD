@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../OCoD.LibraryClient/OCoD.LibraryClient.csproj" />
+    <ProjectReference Include="../OCoD.Localization/OCoD.Localization.csproj" />
     <ProjectReference Include="../OCoD.Protocol/OCoD.Protocol.csproj" />
   </ItemGroup>
 

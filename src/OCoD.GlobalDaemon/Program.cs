@@ -30,20 +30,27 @@ internal static class Program
             log?.Write(message);
         }
 
+        var requestedCulture = ResolveRequestedCulture(options.LanguageTag, out var invalidLanguageTag);
+        var localization = LocalizationService.CreateDefault(requestedCulture);
+
+        if (invalidLanguageTag is not null)
+        {
+            Log(localization.Get(LocKeys.WarningUnrecognizedLanguage, invalidLanguageTag));
+        }
+
         if (!SingleInstanceLock.TryAcquire(
                 OcodPaths.GlobalDaemonLockFile(options.RuntimeRoot),
                 out var instanceLock,
                 out var lockError))
         {
             Log($"global daemon lock is held ({lockError?.Message}); activating the existing daemon");
-            return ActivateExistingDaemonAsync(options.RuntimeRoot).GetAwaiter().GetResult();
+            return ActivateExistingDaemonAsync(options.RuntimeRoot, localization)
+                .GetAwaiter()
+                .GetResult();
         }
 
         using (instanceLock)
         {
-            var localization = LocalizationService.CreateDefault(
-                ResolveRequestedCulture(options.LanguageTag));
-
             var lifetime = new ClassicDesktopStyleApplicationLifetime
             {
                 Args = args,
@@ -82,7 +89,9 @@ internal static class Program
         }
     }
 
-    private static async Task<int> ActivateExistingDaemonAsync(string runtimeRoot)
+    private static async Task<int> ActivateExistingDaemonAsync(
+        string runtimeRoot,
+        LocalizationService localization)
     {
         var endpoint = EndpointPaths.ForGlobalDaemon(runtimeRoot);
         Exception? lastError = null;
@@ -102,11 +111,12 @@ internal static class Program
 
                 if (response.Ok == false)
                 {
-                    Console.Error.WriteLine(response.Error ?? "Could not open the management window.");
+                    Console.Error.WriteLine(
+                        response.Error ?? localization.Get(LocKeys.DaemonOpenManagementFailed));
                     return 2;
                 }
 
-                Console.WriteLine("OCoD is already running; opened the management window.");
+                Console.WriteLine(localization.Get(LocKeys.DaemonAlreadyRunning));
                 return 0;
             }
             catch (Exception exception) when (
@@ -122,13 +132,16 @@ internal static class Program
         }
 
         Console.Error.WriteLine(
-            $"A global daemon holds the lock but its control channel is unreachable: " +
-            $"{lastError?.Message}");
+            localization.Get(LocKeys.DaemonControlUnreachable, lastError?.Message));
         return 2;
     }
 
-    private static CultureInfo? ResolveRequestedCulture(string? languageTag)
+    private static CultureInfo? ResolveRequestedCulture(
+        string? languageTag,
+        out string? invalidLanguageTag)
     {
+        invalidLanguageTag = null;
+
         if (languageTag is null)
         {
             return null;
@@ -139,7 +152,7 @@ internal static class Program
             return culture;
         }
 
-        Console.Error.WriteLine($"OCoD: ignoring unrecognized language tag '{languageTag}'.");
+        invalidLanguageTag = languageTag;
         return null;
     }
 }

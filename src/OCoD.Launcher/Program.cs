@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 
+using OCoD.Localization;
 using OCoD.Protocol;
 
 using LibraryClientApi = OCoD.LibraryClient.LibraryClient;
@@ -9,20 +11,33 @@ namespace OCoD.Launcher;
 internal static class Program
 {
     private static readonly TimeSpan DaemonStartupTimeout = TimeSpan.FromSeconds(25);
+    private static readonly Lazy<LocalizationService> FallbackLocalization =
+        new(() => LocalizationService.CreateDefault());
 
     public static async Task<int> Main(string[] args)
     {
-        if (!LauncherOptions.TryParse(args, out var options, out var error) || options is null)
+        var requestedLanguage = LauncherOptions.FindLanguageTag(args);
+        var resolvedCulture = ResolveRequestedCulture(requestedLanguage);
+        var localization = LocalizationService.CreateDefault(resolvedCulture);
+
+        if (requestedLanguage is not null && resolvedCulture is null)
+        {
+            Console.Error.WriteLine(
+                localization.Get(LocKeys.WarningUnrecognizedLanguage, requestedLanguage));
+        }
+
+        if (!LauncherOptions.TryParse(args, localization, out var options, out var error)
+            || options is null)
         {
             Console.Error.WriteLine(error);
             Console.Error.WriteLine();
-            Console.Error.WriteLine(LauncherOptions.Usage);
+            Console.Error.WriteLine(localization.Get(LocKeys.LauncherUsage));
             return 2;
         }
 
         if (options.Command == LauncherCommand.Help)
         {
-            Console.WriteLine(LauncherOptions.Usage);
+            Console.WriteLine(localization.Get(LocKeys.LauncherUsage));
             return 0;
         }
 
@@ -55,7 +70,8 @@ internal static class Program
             runtimeRoot,
             libraryPath,
             smokeRoot,
-            Log);
+            Log,
+            localization);
 
         try
         {
@@ -73,7 +89,7 @@ internal static class Program
         }
         catch (Exception exception)
         {
-            Log($"launcher failed: {exception}");
+            Log(localization.Get(LocKeys.LauncherErrorGeneral, exception));
             return 1;
         }
     }
@@ -93,7 +109,9 @@ internal static class Program
             LauncherCommand.StopCharacter => "stop-character",
             LauncherCommand.ActivateCharacter => "activate-character",
             _ => throw new InvalidOperationException(
-                $"Unsupported launcher command {context.Options.Command}."),
+                context.Localization.Get(
+                    LocKeys.LauncherErrorUnsupportedCommand,
+                    context.Options.Command)),
         };
 
         System.Text.Json.JsonElement? parameters = context.Options.Command switch
@@ -116,12 +134,13 @@ internal static class Program
 
         if (response.Ok == false)
         {
-            Console.Error.WriteLine(response.Error ?? $"Command '{method}' failed.");
+            Console.Error.WriteLine(
+                response.Error ?? context.Localization.Get(LocKeys.LauncherErrorCommandFailed, method));
             return 2;
         }
 
-        var status = await GetStatusAsync(connection).ConfigureAwait(false);
-        PrintStatus(status);
+        var status = await GetStatusAsync(connection, context.Localization).ConfigureAwait(false);
+        PrintStatus(status, context.Localization);
         return 0;
     }
 
@@ -134,11 +153,13 @@ internal static class Program
 
         if (connection is null)
         {
-            Console.WriteLine("OCoD global daemon is not running.");
+            Console.WriteLine(context.Localization.Get(LocKeys.LauncherGlobalDaemonNotRunning));
             return 1;
         }
 
-        PrintStatus(await GetStatusAsync(connection).ConfigureAwait(false));
+        PrintStatus(
+            await GetStatusAsync(connection, context.Localization).ConfigureAwait(false),
+            context.Localization);
         return 0;
     }
 
@@ -150,7 +171,7 @@ internal static class Program
 
         if (connection is null)
         {
-            Console.WriteLine("OCoD global daemon is not running.");
+            Console.WriteLine(context.Localization.Get(LocKeys.LauncherGlobalDaemonNotRunning));
             return 0;
         }
 
@@ -163,7 +184,8 @@ internal static class Program
 
             if (response.Ok == false)
             {
-                Console.Error.WriteLine(response.Error ?? "Shutdown request failed.");
+                Console.Error.WriteLine(
+                    response.Error ?? context.Localization.Get(LocKeys.LauncherErrorShutdown));
                 return 2;
             }
         }
@@ -176,14 +198,14 @@ internal static class Program
 
             if (probe is null)
             {
-                Console.WriteLine("OCoD stopped.");
+                Console.WriteLine(context.Localization.Get(LocKeys.LauncherStopped));
                 return 0;
             }
 
             await Task.Delay(300).ConfigureAwait(false);
         }
 
-        Console.Error.WriteLine("Timed out waiting for the global daemon to stop.");
+        Console.Error.WriteLine(context.Localization.Get(LocKeys.LauncherErrorStopTimeout));
         return 2;
     }
 
@@ -228,7 +250,7 @@ internal static class Program
             arguments.Add(languageTag);
         }
 
-        StartDetached(command, arguments, context.Log);
+        StartDetached(command, arguments, context.Log, context.Localization);
 
         var deadline = DateTimeOffset.UtcNow + DaemonStartupTimeout;
         while (DateTimeOffset.UtcNow < deadline)
@@ -244,7 +266,7 @@ internal static class Program
             await Task.Delay(200).ConfigureAwait(false);
         }
 
-        throw new TimeoutException("The global daemon did not become ready.");
+        throw new TimeoutException(context.Localization.Get(LocKeys.LauncherErrorDaemonNotReady));
     }
 
     internal static async Task<IpcClientConnection?> TryConnectAsync(
@@ -270,7 +292,8 @@ internal static class Program
     {
         var importPath = Path.GetFullPath(
             context.Options.ImportPath
-            ?? throw new InvalidOperationException("An import path is required."));
+            ?? throw new InvalidOperationException(
+                context.Localization.Get(LocKeys.LauncherErrorImportPath)));
 
         await using var connection = await EnsureDaemonAsync(context).ConfigureAwait(false);
         await EnsureLibraryAsync(connection, context).ConfigureAwait(false);
@@ -280,12 +303,18 @@ internal static class Program
 
         var result = await library.ImportCvclkAsync(importPath).ConfigureAwait(false);
         Console.WriteLine(
-            $"imported {result.Imported.Count} character(s), skipped {result.Skipped.Count}");
+            context.Localization.Get(
+                LocKeys.LauncherImportSummary,
+                result.Imported.Count,
+                result.Skipped.Count));
 
         foreach (var skipped in result.Skipped)
         {
             Console.WriteLine(
-                $"  skipped {skipped.Name ?? skipped.SourceId ?? "<unknown>"}: {skipped.Reason}");
+                context.Localization.Get(
+                    LocKeys.LauncherImportSkipped,
+                    skipped.Name ?? skipped.SourceId ?? "<unknown>",
+                    skipped.Reason));
         }
 
         foreach (var imported in result.Imported)
@@ -298,14 +327,20 @@ internal static class Program
             if (response.Ok == false)
             {
                 Console.Error.WriteLine(
-                    $"failed to start {imported.Name}: {response.Error}");
+                    context.Localization.Get(
+                        LocKeys.LauncherErrorStartCharacter,
+                        imported.Name,
+                        response.Error));
                 continue;
             }
 
-            Console.WriteLine($"started {imported.Name} ({imported.Id})");
+            Console.WriteLine(
+                context.Localization.Get(LocKeys.LauncherStartedCharacter, imported.Name, imported.Id));
         }
 
-        PrintStatus(await GetStatusAsync(connection).ConfigureAwait(false));
+        PrintStatus(
+            await GetStatusAsync(connection, context.Localization).ConfigureAwait(false),
+            context.Localization);
         return result.Imported.Count == 0 && result.Skipped.Count > 0 ? 1 : 0;
     }
 
@@ -320,12 +355,19 @@ internal static class Program
         var characters = await library.ListCharactersAsync(
             timeout: TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
-        Console.WriteLine($"characters in {context.LibraryPath}: {characters.Count}");
+        Console.WriteLine(
+            context.Localization.Get(
+                LocKeys.LauncherCharactersHeader,
+                context.LibraryPath,
+                characters.Count));
         foreach (var character in characters)
         {
             Console.WriteLine(
-                $"  {character.Id}  {character.Name}  " +
-                $"startSize={(character.StartSize == 0 ? 160 : character.StartSize)}");
+                context.Localization.Get(
+                    LocKeys.LauncherCharacterLine,
+                    character.Id,
+                    character.Name,
+                    character.StartSize == 0 ? 160 : character.StartSize));
         }
 
         return 0;
@@ -343,7 +385,9 @@ internal static class Program
         if (response.Ok == false)
         {
             throw new IpcException(
-                response.Error ?? $"Could not start the library daemon for '{context.LibraryPath}'.");
+                response.Error ?? context.Localization.Get(
+                    LocKeys.LauncherErrorLibraryDaemon,
+                    context.LibraryPath));
         }
     }
 
@@ -376,14 +420,17 @@ internal static class Program
         }
 
         throw new TimeoutException(
-            $"The library daemon for '{context.LibraryPath}' did not become ready: " +
-            $"{lastError?.Message}");
+            context.Localization.Get(
+                LocKeys.LauncherErrorLibraryDaemonTimeout,
+                context.LibraryPath,
+                lastError?.Message));
     }
 
     private static async Task<int> SetSettingsAsync(LauncherContext context)
     {
         var characterId = context.Options.CharacterId
-            ?? throw new InvalidOperationException("A character id is required.");
+            ?? throw new InvalidOperationException(
+                context.Localization.Get(LocKeys.LauncherErrorCharacterId));
 
         await using var connection = await EnsureDaemonAsync(context).ConfigureAwait(false);
         await EnsureLibraryAsync(connection, context).ConfigureAwait(false);
@@ -405,13 +452,23 @@ internal static class Program
 
         await library.SaveRunSettingsAsync(characterId, settings).ConfigureAwait(false);
         Console.WriteLine(
-            $"saved settings for {character.Name}: width={settings.Width}, " +
-            $"height={settings.Height}, flipped={settings.Flipped}, topmost={settings.Topmost}");
-        Console.WriteLine("Restart the character to apply the saved settings.");
+            context.Localization.Get(
+                LocKeys.LauncherSettingsSaved,
+                character.Name,
+                settings.Width,
+                settings.Height,
+                settings.Flipped,
+                settings.Topmost));
+        Console.WriteLine(context.Localization.Get(LocKeys.LauncherRestartToApply));
         return 0;
     }
 
-    internal static async Task<GlobalStatus> GetStatusAsync(IpcClientConnection connection)
+    internal static Task<GlobalStatus> GetStatusAsync(IpcClientConnection connection) =>
+        GetStatusAsync(connection, FallbackLocalization.Value);
+
+    internal static async Task<GlobalStatus> GetStatusAsync(
+        IpcClientConnection connection,
+        LocalizationService localization)
     {
         var response = await connection.InvokeAsync(
             "status",
@@ -420,76 +477,136 @@ internal static class Program
 
         return response.Result is { } result
             ? ProtocolJson.FromElement<GlobalStatus>(result)
-            : throw new IpcException("The global daemon returned no status.");
+            : throw new IpcException(localization.Get(LocKeys.LauncherErrorNoStatus));
     }
 
-    internal static void PrintStatus(GlobalStatus status)
+    internal static void PrintStatus(GlobalStatus status, LocalizationService localization)
     {
-        Console.WriteLine("OCoD topology:");
-        Console.WriteLine(
-            $"  global daemon   : pid {status.Pid}, version {status.Version}, " +
-            $"management window {(status.ManagementWindowOpen ? "open" : "closed")}");
-        Console.WriteLine($"  library         : {status.LibraryPath}");
-        Console.WriteLine($"  library daemon  : {Describe(status.LibraryDaemon)}");
+        Console.WriteLine(localization.Get(LocKeys.LauncherStatusTitle));
+        Console.WriteLine(localization.Get(
+            LocKeys.LauncherStatusGlobal,
+            status.Pid,
+            status.Version,
+            ManagementState(status.ManagementWindowOpen, localization)));
+        Console.WriteLine(localization.Get(LocKeys.LauncherStatusLibrary, status.LibraryPath));
+        Console.WriteLine(localization.Get(
+            LocKeys.LauncherStatusLibraryDaemon,
+            Describe(status.LibraryDaemon, localization)));
 
         if (status.CharacterRuntimes is { Count: > 0 } runtimes)
         {
             foreach (var runtime in runtimes)
             {
-                var label = runtime.CharacterName ?? runtime.CharacterId ?? "placeholder";
-                Console.WriteLine($"  character       : {label} — {Describe(runtime.Process)}");
+                var label = CharacterLabel(runtime, localization);
+                Console.WriteLine(localization.Get(
+                    LocKeys.LauncherStatusCharacter,
+                    label,
+                    Describe(runtime.Process, localization)));
 
                 if (runtime.State is { } state)
                 {
-                    Console.WriteLine(
-                        $"  character state : click-through={(state.ClickThrough ? "on" : "off")}, " +
-                        $"library-connected={state.LibraryConnected}, flipped={state.Flipped}, " +
-                        $"locked={state.Locked}, topmost={state.Topmost}");
+                    Console.WriteLine(localization.Get(
+                        LocKeys.LauncherStatusCharacterState,
+                        OnOff(state.ClickThrough, localization),
+                        OnOff(state.LibraryConnected, localization),
+                        OnOff(state.Flipped, localization),
+                        OnOff(state.Locked, localization),
+                        OnOff(state.Topmost, localization)));
                 }
             }
         }
         else
         {
-            Console.WriteLine($"  character       : {Describe(status.CharacterRuntime)}");
+            Console.WriteLine(localization.Get(
+                LocKeys.LauncherStatusNoCharacter,
+                Describe(status.CharacterRuntime, localization)));
         }
 
         if (status.Libraries is { Count: > 1 } libraries)
         {
-            Console.WriteLine($"  libraries       : {libraries.Count}");
+            Console.WriteLine(localization.Get(LocKeys.LauncherStatusLibraries, libraries.Count));
 
             foreach (var library in libraries)
             {
-                Console.WriteLine(
-                    $"    {library.DisplayName}  {library.LibraryPath}  " +
-                    $"[management {(library.ManagementWindowOpen ? "open" : "closed")}]");
-                Console.WriteLine($"      library daemon : {Describe(library.LibraryDaemon)}");
-                Console.WriteLine($"      characters     : {library.CharacterRuntimes.Count}");
+                Console.WriteLine(localization.Get(
+                    LocKeys.LauncherStatusLibraryHeader,
+                    library.DisplayName,
+                    library.LibraryPath,
+                    ManagementState(library.ManagementWindowOpen, localization)));
+                Console.WriteLine(localization.Get(
+                    LocKeys.LauncherStatusLibraryDaemonLine,
+                    Describe(library.LibraryDaemon, localization)));
+                Console.WriteLine(localization.Get(
+                    LocKeys.LauncherStatusCharactersLine,
+                    library.CharacterRuntimes.Count));
 
                 foreach (var runtime in library.CharacterRuntimes)
                 {
-                    var label = runtime.CharacterName ?? runtime.CharacterId ?? "placeholder";
-                    Console.WriteLine($"        {label} — {Describe(runtime.Process)}");
+                    Console.WriteLine(localization.Get(
+                        LocKeys.LauncherStatusRuntimeLine,
+                        CharacterLabel(runtime, localization),
+                        Describe(runtime.Process, localization)));
                 }
             }
         }
     }
 
-    private static string Describe(ProcessInfo process)
+    private static string CharacterLabel(
+        CharacterRuntimeStatus runtime,
+        LocalizationService localization) =>
+        runtime.CharacterName ?? runtime.CharacterId ?? localization.Get(LocKeys.LauncherStatusPlaceholder);
+
+    private static string ManagementState(bool open, LocalizationService localization) =>
+        localization.Get(open ? LocKeys.LauncherStatusOpen : LocKeys.LauncherStatusClosed);
+
+    private static string OnOff(bool value, LocalizationService localization) =>
+        localization.Get(value ? LocKeys.LauncherStatusOn : LocKeys.LauncherStatusOff);
+
+    private static string Describe(ProcessInfo process, LocalizationService localization)
     {
         if (!process.Running)
         {
-            return process.Detail ?? "stopped";
+            return process.Detail switch
+            {
+                "starting" => localization.Get(LocKeys.LauncherStatusStarting),
+                null or "not running" => localization.Get(LocKeys.LauncherStatusNotRunning),
+                _ => process.Detail,
+            };
         }
 
-        var version = process.Version is null ? string.Empty : $", version {process.Version}";
-        var detail = process.Detail is null ? string.Empty : $", {process.Detail}";
-        return $"running, pid {process.Pid}{version}{detail}";
+        var result = localization.Get(LocKeys.LauncherStatusRunning, process.Pid);
+
+        if (process.Version is not null)
+        {
+            result += localization.Get(LocKeys.LauncherStatusVersionSuffix, process.Version);
+        }
+
+        if (process.Detail is not null)
+        {
+            var detail = string.Equals(process.Detail, "starting", StringComparison.Ordinal)
+                ? localization.Get(LocKeys.LauncherStatusStarting)
+                : process.Detail;
+            result += localization.Get(LocKeys.LauncherStatusDetailSuffix, detail);
+        }
+
+        return result;
+    }
+
+    private static CultureInfo? ResolveRequestedCulture(string? languageTag)
+    {
+        if (languageTag is null)
+        {
+            return null;
+        }
+
+        return SupportedCultures.TryParse(languageTag, out var culture) ? culture : null;
     }
 
     private static void StartDetached(
         ComponentCommand command,
         IReadOnlyList<string> arguments,
-        Action<string> log)
+        Action<string> log,
+        LocalizationService localization)
     {
         ProcessStartInfo startInfo;
 
@@ -539,9 +656,10 @@ internal static class Program
         }
 
         using var process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException("Could not start the global daemon.");
+            ?? throw new InvalidOperationException(
+                localization.Get(LocKeys.LauncherErrorStartDaemon));
 
-        log($"started global daemon as pid {process.Id}");
+        log(localization.Get(LocKeys.LauncherStartedDaemon, process.Id));
     }
 }
 
@@ -550,4 +668,5 @@ internal sealed record LauncherContext(
     string RuntimeRoot,
     string LibraryPath,
     string? SmokeRoot,
-    Action<string> Log);
+    Action<string> Log,
+    LocalizationService Localization);

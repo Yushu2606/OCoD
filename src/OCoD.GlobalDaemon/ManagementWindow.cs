@@ -211,7 +211,8 @@ internal sealed class ManagementWindow : Window
                 AllowMultiple = false,
                 FileTypeFilter =
                 [
-                    new FilePickerFileType("OCoD character package")
+                    new FilePickerFileType(
+                        _localization.Get(LocKeys.ManagementPackageFileType))
                     {
                         Patterns = ["*.cvclk"],
                     },

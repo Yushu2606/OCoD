@@ -1,3 +1,5 @@
+using OCoD.Localization;
+
 namespace OCoD.Launcher;
 
 internal enum LauncherCommand
@@ -35,9 +37,12 @@ internal sealed record LauncherOptions(
 {
     public static bool TryParse(
         IReadOnlyList<string> arguments,
+        LocalizationService localization,
         out LauncherOptions? options,
         out string? error)
     {
+        ArgumentNullException.ThrowIfNull(localization);
+
         options = null;
         error = null;
 
@@ -172,7 +177,7 @@ internal sealed record LauncherOptions(
             {
                 if (!double.TryParse(widthValue, out var parsedWidth))
                 {
-                    error = "--width requires a number.";
+                    error = localization.Get(LocKeys.LauncherErrorWidthNumber);
                     return false;
                 }
 
@@ -182,7 +187,7 @@ internal sealed record LauncherOptions(
             {
                 if (!double.TryParse(heightValue, out var parsedHeight))
                 {
-                    error = "--height requires a number.";
+                    error = localization.Get(LocKeys.LauncherErrorHeightNumber);
                     return false;
                 }
 
@@ -192,7 +197,7 @@ internal sealed record LauncherOptions(
             {
                 if (!TryParseBoolean(flipValue, out var parsedFlip))
                 {
-                    error = "--flip requires on or off.";
+                    error = localization.Get(LocKeys.LauncherErrorFlipOnOff);
                     return false;
                 }
 
@@ -202,7 +207,7 @@ internal sealed record LauncherOptions(
             {
                 if (!TryParseBoolean(topmostValue, out var parsedTopmost))
                 {
-                    error = "--topmost requires on or off.";
+                    error = localization.Get(LocKeys.LauncherErrorTopmostOnOff);
                     return false;
                 }
 
@@ -210,14 +215,14 @@ internal sealed record LauncherOptions(
             }
             else
             {
-                error = $"Unknown launcher argument '{argument}'.";
+                error = localization.Get(LocKeys.LauncherErrorUnknownArgument, argument);
                 return false;
             }
         }
 
         if (command == LauncherCommand.Import && string.IsNullOrWhiteSpace(importPath))
         {
-            error = "--import requires a .cvclk path.";
+            error = localization.Get(LocKeys.LauncherErrorImportPathRequired);
             return false;
         }
 
@@ -227,7 +232,7 @@ internal sealed record LauncherOptions(
                 or LauncherCommand.SetSettings)
             && string.IsNullOrWhiteSpace(characterId))
         {
-            error = "This character command requires a character id.";
+            error = localization.Get(LocKeys.LauncherErrorCharacterIdRequired);
             return false;
         }
 
@@ -246,35 +251,23 @@ internal sealed record LauncherOptions(
         return true;
     }
 
-    public static string Usage =>
-        """
-        OCoD development launcher
+    /// <summary>Pre-scans --lang/OCOD_LANG so parse errors can be localized.</summary>
+    public static string? FindLanguageTag(IReadOnlyList<string> arguments)
+    {
+        var tag = Environment.GetEnvironmentVariable("OCOD_LANG");
 
-          OCoD.Launcher [options]                  start the global daemon and character runtime
-          OCoD.Launcher --status                   print the current topology
-          OCoD.Launcher --open                     open the character library management window
-          OCoD.Launcher --ensure-runtime           start the character runtime if needed
-          OCoD.Launcher --stop-runtime             stop the character runtime
-          OCoD.Launcher --restart-runtime          restart the character runtime
-          OCoD.Launcher --restart-library-daemon   restart the library daemon
-          OCoD.Launcher --stop                     stop the global daemon and its children
-          OCoD.Launcher --smoke-test               run the process-topology smoke test
-          OCoD.Launcher --import <path>            import a normal .cvclk package
-          OCoD.Launcher --characters               list imported characters
-          OCoD.Launcher --start-character <id>     start one character runtime
-          OCoD.Launcher --stop-character <id>      stop one character runtime
-          OCoD.Launcher --activate-character <id>  focus one running character window
-          OCoD.Launcher --set-settings <id>        update saved window settings
+        for (var index = 0; index < arguments.Count; index++)
+        {
+            var argument = arguments[index];
 
-        Set-settings options:
-          --width <n> --height <n> --flip on|off  --topmost on|off
+            if (TryReadValue(arguments, ref index, "--lang", argument, out var value))
+            {
+                tag = value;
+            }
+        }
 
-        Options:
-          --library <path>         character library path (OCOD_LIBRARY)
-          --data-dir <path>        runtime data and logs directory (OCOD_DATA_DIR)
-          --components-dir <path>  directory containing the published components (OCOD_COMPONENTS_DIR)
-          --lang <tag>             UI language passed to newly started processes
-        """;
+        return Normalize(tag);
+    }
 
     private static bool TryReadValue(
         IReadOnlyList<string> arguments,

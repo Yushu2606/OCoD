@@ -18,7 +18,16 @@ internal static class Program
     public static int Main(string[] args)
     {
         var options = CharacterHostOptions.Parse(args, Environment.GetEnvironmentVariable("OCOD_LANG"));
-        var localization = LocalizationService.CreateDefault(ResolveRequestedCulture(options.LanguageTag));
+        var requestedCulture = ResolveRequestedCulture(
+            options.LanguageTag,
+            out var invalidLanguageTag);
+        var localization = LocalizationService.CreateDefault(requestedCulture);
+
+        if (invalidLanguageTag is not null)
+        {
+            Console.Error.WriteLine(
+                localization.Get(LocKeys.WarningUnrecognizedLanguage, invalidLanguageTag));
+        }
 
         var lifetime = new ClassicDesktopStyleApplicationLifetime
         {
@@ -54,7 +63,8 @@ internal static class Program
             {
                 if (options.ControlToken is null)
                 {
-                    Console.Error.WriteLine("OCoD: --control-endpoint requires --control-token.");
+                    Console.Error.WriteLine(
+                        localization.Get(LocKeys.CharacterErrorControlToken));
                     return 2;
                 }
 
@@ -71,7 +81,9 @@ internal static class Program
                 catch (Exception exception)
                 {
                     Console.Error.WriteLine(
-                        $"OCoD: could not connect to the global daemon: {exception.Message}");
+                        localization.Get(
+                            LocKeys.CharacterErrorConnectDaemon,
+                            exception.Message));
                     return 2;
                 }
 
@@ -90,18 +102,22 @@ internal static class Program
             {
                 if (libraryConnection is null)
                 {
-                    Console.Error.WriteLine("OCoD: --character requires --library.");
+                    Console.Error.WriteLine(
+                        localization.Get(LocKeys.CharacterErrorCharacterNeedsLibrary));
                     return 2;
                 }
 
                 try
                 {
-                    LoadCharacter(shell, libraryConnection, options.CharacterId);
+                    LoadCharacter(shell, libraryConnection, options.CharacterId, localization);
                 }
                 catch (Exception exception)
                 {
                     Console.Error.WriteLine(
-                        $"OCoD: could not load character '{options.CharacterId}': {exception}");
+                        localization.Get(
+                            LocKeys.CharacterErrorLoadCharacter,
+                            options.CharacterId,
+                            exception));
                     return 3;
                 }
             }
@@ -134,7 +150,8 @@ internal static class Program
     private static void LoadCharacter(
         CharacterShell shell,
         LibraryRuntimeConnection libraryConnection,
-        string characterId)
+        string characterId,
+        LocalizationService localization)
     {
         libraryConnection.WaitForConnectedAsync(TimeSpan.FromSeconds(10))
             .GetAwaiter()
@@ -176,7 +193,8 @@ internal static class Program
 
             if (!bitmaps.ContainsKey("body") && !bitmaps.ContainsKey("head"))
             {
-                throw new InvalidDataException("The character has no displayable body or head image.");
+                throw new InvalidDataException(
+                    localization.Get(LocKeys.CharacterErrorNoDisplayableImage));
             }
 
             shell.LoadCharacter(record, bitmaps);
@@ -192,8 +210,12 @@ internal static class Program
         }
     }
 
-    private static CultureInfo? ResolveRequestedCulture(string? languageTag)
+    private static CultureInfo? ResolveRequestedCulture(
+        string? languageTag,
+        out string? invalidLanguageTag)
     {
+        invalidLanguageTag = null;
+
         if (languageTag is null)
         {
             return null;
@@ -204,7 +226,7 @@ internal static class Program
             return culture;
         }
 
-        Console.Error.WriteLine($"OCoD: ignoring unrecognized language tag '{languageTag}'.");
+        invalidLanguageTag = languageTag;
         return null;
     }
 }

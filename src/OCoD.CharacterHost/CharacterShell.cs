@@ -113,7 +113,9 @@ internal sealed class CharacterShell : IDisposable
 
         if (images.Count == 0)
         {
-            throw new ArgumentException("A character must have at least one image.", nameof(images));
+            throw new ArgumentException(
+                _localization.Get(LocKeys.CharacterErrorNoImages),
+                nameof(images));
         }
 
         _characterId = record.Id;
@@ -198,7 +200,8 @@ internal sealed class CharacterShell : IDisposable
                 break;
 
             default:
-                Console.Error.WriteLine($"OCoD: unknown character command '{command.Name}'.");
+                Console.Error.WriteLine(
+                    _localization.Get(LocKeys.CharacterErrorUnknownCommand, command.Name));
                 break;
         }
     }
@@ -584,7 +587,8 @@ internal sealed class CharacterShell : IDisposable
 
         if (!ClickThroughService.TrySet(Window, enabled))
         {
-            Console.Error.WriteLine("OCoD: click-through is not supported on this platform.");
+            Console.Error.WriteLine(
+                _localization.Get(LocKeys.CharacterErrorClickThroughUnsupported));
             return false;
         }
 
@@ -724,7 +728,8 @@ internal sealed class CharacterShell : IDisposable
                 or ObjectDisposedException
                 or OperationCanceledException)
         {
-            Console.Error.WriteLine($"OCoD: could not save character settings: {exception.Message}");
+            Console.Error.WriteLine(
+                _localization.Get(LocKeys.CharacterErrorSaveSettings, exception.Message));
         }
     }
 
@@ -740,7 +745,8 @@ internal sealed class CharacterShell : IDisposable
         catch (Exception exception) when (
             exception is IOException or ObjectDisposedException or IpcException)
         {
-            Console.Error.WriteLine($"OCoD: could not publish character state: {exception.Message}");
+            Console.Error.WriteLine(
+                _localization.Get(LocKeys.CharacterErrorPublishState, exception.Message));
         }
     }
 
