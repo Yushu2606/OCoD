@@ -197,6 +197,7 @@ $LASTEXITCODE
 - Windows 10 22H2 新测试机（DESKTOP-ETJJIIM）：Release 构建 0 警告 0 错误，63 项测试全部通过（含 Windows `UnauthorizedAccessException` 提交失败分支）；托管发布 `dist-a` / `dist-b` 双分发目录验证：A 占位运行中，B 导入 `plain-minimal.cvclk` 并启动角色，两库库级守护进程 PID 不同；关闭 B 管理窗口后 A `--restart-runtime` 成功启动新 PID；`editlock-owner-reexport.cvclk` 被整文件拒绝。
 - Windows 10 Native AOT（旧测试机，单库基线）：使用 Visual Studio 2026 的 MSVC 14.52 工具链，四个组件均发布到 `win-aot`；AOT 拓扑冒烟以退出码 0 通过，AOT 导入 `plain-minimal.cvclk` 后角色窗口以 160×160 显示实际角色图层，管理窗口列出角色与运行状态。通过 `--set-settings` 保存 200×180、水平翻转和置顶后停止并重新启动角色，窗口尺寸变为 200×180，状态报告翻转/置顶已恢复，`settings.json` 与截图一致。通知区域图标在溢出区域确认（本机交互桌面会话处于锁定状态，窗口用 `PrintWindow` 截图；全屏抓取不可用）。
 - Windows 10 Native AOT（新测试机 DESKTOP-ETJJIIM，最终 `9bf0064`）：VS Build Tools 2026 18.12.12405.243，MSVC 14.52.37025，Windows SDK 10.0.26100.0。四个组件重发布成功（BuildTools 未被 vswhere 登记，使用 `vcvars64` 环境加 `-p:IlcUseEnvironmentalTools=true`）；AOT 拓扑冒烟 27 项全部通过。AOT `dist-a`/`dist-b` 双分发目录：A 占位运行中，B 导入 `plain-minimal.cvclk` 并启动角色，两库级守护进程 PID 不同（21088 / 4428）；关闭 B 管理窗口后 A `--restart-runtime` 成功启动新 PID（14296），B 角色仍运行；`editlock-owner-reexport.cvclk` 被 AOT 整文件拒绝。
+- Windows 10 新测试机移动分发目录（`b02718c` AOT）：B 角色保存 200×180、翻转、置顶并停止后，将整个 `dist-b` 移到 `dist-b-moved`；移动期间 A 的全局守护进程、A 库级守护进程和占位角色 PID 均保持不变。从新路径启动 B 后，角色运行且翻转/置顶恢复，`settings.json` 为 200×180，B 库级守护进程在新路径下运行（PID 12352）；A `--restart-runtime` 启动新 PID 后 B 角色 PID 4892 不变；旧 `dist-b` 已不存在，AOT 冒烟 27/27 通过。限制：A 全程不停机时，全局守护进程内存会保留一条旧的 `dist-b` 路径条目（无守护进程、无角色），停止或重启拓扑后消失。
 - macOS Intel（`osx-x64`）：尚未在 Intel 机器上执行。
 
 ## 排查
